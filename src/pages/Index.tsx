@@ -74,9 +74,9 @@ const Index = () => {
             <Card 
               key={type.title} 
               className={cn(
-                "border-2 hover:border-primary/50 cursor-pointer opacity-0 transform translate-y-8",
+                "border-2 hover:border-primary/50",
                 animate && "opacity-100 transform-none",
-                `transition-all duration-700 ease-out delay-[${300 + index * 100}ms]`
+                `opacity-0 transform translate-y-8 transition-all duration-700 ease-out delay-[${300 + index * 100}]`
               )}
               glassmorphism
               hover

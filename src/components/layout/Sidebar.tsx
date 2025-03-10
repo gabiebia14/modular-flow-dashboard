@@ -4,7 +4,6 @@ import { Home, MessageCircle, FileText, Settings, Users, LogOut, ChevronLeft, Ch
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Sidebar as SidebarComponent, SidebarContent, SidebarFooter, SidebarHeader, SidebarTrigger } from "@/components/ui/sidebar";
 
 type SidebarLinkProps = {
   to: string;
@@ -12,7 +11,7 @@ type SidebarLinkProps = {
   label: string;
   expanded: boolean;
   userType: "client" | "manager" | "admin";
-  allowedUsers: Array<"client" | "manager" | "admin">;
+  allowedUsers: ("client" | "manager" | "admin")[];
 };
 
 const SidebarLink = ({ to, icon: Icon, label, expanded, userType, allowedUsers }: SidebarLinkProps) => {
@@ -47,13 +46,6 @@ export const Sidebar = () => {
   const isMobile = useIsMobile();
   const [userType, setUserType] = useState<"client" | "manager" | "admin">("client");
   
-  // Toggle between user types for demo purposes
-  const toggleUserType = () => {
-    if (userType === "client") setUserType("manager");
-    else if (userType === "manager") setUserType("admin");
-    else setUserType("client");
-  };
-  
   useEffect(() => {
     if (isMobile) {
       setExpanded(false);
@@ -61,11 +53,36 @@ export const Sidebar = () => {
   }, [isMobile]);
 
   const sidebarLinks = [
-    { to: "/", icon: Home, label: "Home", allowedUsers: ["client", "manager", "admin"] as Array<"client" | "manager" | "admin"> },
-    { to: "/client", icon: MessageCircle, label: "Atendimento", allowedUsers: ["client"] as Array<"client" | "manager" | "admin"> },
-    { to: "/manager", icon: FileText, label: "Orçamentos", allowedUsers: ["manager"] as Array<"client" | "manager" | "admin"> },
-    { to: "/admin", icon: Settings, label: "Configuração", allowedUsers: ["admin"] as Array<"client" | "manager" | "admin"> },
-    { to: "/clients", icon: Users, label: "Clientes", allowedUsers: ["manager", "admin"] as Array<"client" | "manager" | "admin"> }
+    { 
+      to: "/", 
+      icon: Home, 
+      label: "Home", 
+      allowedUsers: ["client", "manager", "admin"] as ("client" | "manager" | "admin")[]
+    },
+    { 
+      to: "/client", 
+      icon: MessageCircle, 
+      label: "Atendimento", 
+      allowedUsers: ["client"] as ("client" | "manager" | "admin")[]
+    },
+    { 
+      to: "/manager", 
+      icon: FileText, 
+      label: "Orçamentos", 
+      allowedUsers: ["manager"] as ("client" | "manager" | "admin")[]
+    },
+    { 
+      to: "/admin", 
+      icon: Settings, 
+      label: "Configuração", 
+      allowedUsers: ["admin"] as ("client" | "manager" | "admin")[]
+    },
+    { 
+      to: "/clients", 
+      icon: Users, 
+      label: "Clientes", 
+      allowedUsers: ["manager", "admin"] as ("client" | "manager" | "admin")[]
+    }
   ];
 
   return (
@@ -98,29 +115,25 @@ export const Sidebar = () => {
         </Button>
       </SidebarHeader>
       
-      <SidebarContent className="px-3 py-4">
+      <div className="px-3 py-4">
         <div className="space-y-1">
           {sidebarLinks.map((link) => (
             <SidebarLink 
               key={link.to} 
-              to={link.to} 
-              icon={link.icon} 
-              label={link.label} 
+              {...link}
               expanded={expanded}
               userType={userType}
-              allowedUsers={link.allowedUsers}
             />
           ))}
         </div>
-      </SidebarContent>
+      </div>
       
       <SidebarFooter className="border-t px-3 py-4 mt-auto">
-        {/* User type switch for demo purposes */}
         <Button 
           variant="outline" 
           size="sm"
           className="w-full mb-4"
-          onClick={toggleUserType}
+          onClick={() => setUserType((prevType) => (prevType === "client" ? "manager" : prevType === "manager" ? "admin" : "client"))}
         >
           {expanded ? (
             <span className="capitalize">{userType} View</span>
@@ -141,17 +154,15 @@ export const Sidebar = () => {
         </Button>
       </SidebarFooter>
       
-      {/* Mobile menu trigger */}
       {isMobile && (
-        <SidebarTrigger asChild>
-          <Button 
-            variant="outline" 
-            size="icon"
-            className="fixed bottom-4 right-4 z-50 rounded-full shadow-md"
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-        </SidebarTrigger>
+        <Button 
+          variant="outline" 
+          size="icon"
+          className="fixed bottom-4 right-4 z-50 rounded-full shadow-md"
+          onClick={() => setExpanded(!expanded)}
+        >
+          <Menu className="h-4 w-4" />
+        </Button>
       )}
     </div>
   );
