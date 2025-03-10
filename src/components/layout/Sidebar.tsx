@@ -1,10 +1,17 @@
+
 import { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Home, MessageCircle, FileText, Settings, Users, LogOut, ChevronLeft, ChevronRight, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Sidebar as SidebarComponent, SidebarContent, SidebarFooter, SidebarHeader, SidebarTrigger } from "@/components/ui/sidebar";
+import { 
+  Sidebar as SidebarContainer, 
+  SidebarContent, 
+  SidebarFooter as SidebarFooterContainer, 
+  SidebarHeader as SidebarHeaderContainer, 
+  SidebarTrigger 
+} from "@/components/ui/sidebar";
 
 type SidebarLinkProps = {
   to: string;
@@ -73,7 +80,7 @@ export const Sidebar = () => {
       "border-r bg-glass transition-all duration-300",
       expanded ? "w-64" : "w-16"
     )}>
-      <SidebarHeader className="h-16 flex items-center px-4 border-b">
+      <SidebarHeaderContainer className="h-16 flex items-center px-4 border-b">
         <div className="flex items-center overflow-hidden w-full">
           {expanded ? (
             <div className="flex items-center animate-fade-in">
@@ -96,7 +103,7 @@ export const Sidebar = () => {
         >
           {expanded ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </Button>
-      </SidebarHeader>
+      </SidebarHeaderContainer>
       
       <SidebarContent className="px-3 py-4">
         <div className="space-y-1">
@@ -114,7 +121,7 @@ export const Sidebar = () => {
         </div>
       </SidebarContent>
       
-      <SidebarFooter className="border-t px-3 py-4 mt-auto">
+      <SidebarFooterContainer className="border-t px-3 py-4 mt-auto">
         {/* User type switch for demo purposes */}
         <Button 
           variant="outline" 
@@ -139,7 +146,7 @@ export const Sidebar = () => {
           <LogOut className="h-4 w-4" />
           {expanded && <span className="ml-2">Logout</span>}
         </Button>
-      </SidebarFooter>
+      </SidebarFooterContainer>
       
       {/* Mobile menu trigger */}
       {isMobile && (

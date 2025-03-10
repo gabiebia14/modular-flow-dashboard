@@ -1,179 +1,97 @@
 
 import { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui-custom/Card";
-import { ChatInterface } from "@/components/ui-custom/ChatInterface";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui-custom/Card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Clock, FileText, BarChart, RefreshCw, Calendar } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-
-interface Quote {
-  id: string;
-  date: Date;
-  status: "pending" | "in_progress" | "approved" | "rejected";
-  items: number;
-  total?: number;
-}
+import { ChatInterface } from "@/components/ui-custom/ChatInterface";
+import { MessageCircle, FileText, ArrowLeftCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const ClientDashboard = () => {
-  const [quotes, setQuotes] = useState<Quote[]>([
-    {
-      id: "QT-2023-001",
-      date: new Date(2023, 5, 15),
-      status: "pending",
-      items: 5,
-    },
-    {
-      id: "QT-2023-002",
-      date: new Date(2023, 5, 10),
-      status: "in_progress",
-      items: 3,
-      total: 15600,
-    },
-    {
-      id: "QT-2023-003",
-      date: new Date(2023, 5, 8),
-      status: "approved",
-      items: 2,
-      total: 8400,
-    },
-  ]);
-  
-  const recentQuote = quotes[0];
-  
-  const statusConfig = {
-    pending: { label: "Aguardando", color: "bg-yellow-500" },
-    in_progress: { label: "Em Análise", color: "bg-blue-500" },
-    approved: { label: "Aprovado", color: "bg-green-500" },
-    rejected: { label: "Recusado", color: "bg-red-500" },
-  };
-  
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('pt-BR', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric' 
-    });
-  };
-  
-  const formatCurrency = (value?: number) => {
-    if (value === undefined) return "-";
-    return value.toLocaleString('pt-BR', { 
-      style: 'currency', 
-      currency: 'BRL' 
-    });
-  };
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<"chat" | "quotations">("chat");
 
   return (
-    <MainLayout title="Atendimento ao Cliente" subtitle="Solicite orçamentos e acompanhe seu histórico">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <ChatInterface />
-        </div>
+    <MainLayout 
+      title="Portal do Cliente" 
+      subtitle="Solicite orçamentos e acompanhe seus pedidos"
+    >
+      <div className="flex flex-col space-y-6">
+        <Button 
+          variant="ghost" 
+          className="w-fit flex items-center text-muted-foreground hover:text-foreground"
+          onClick={() => navigate("/")}
+        >
+          <ArrowLeftCircle className="mr-2 h-4 w-4" />
+          Voltar para o início
+        </Button>
         
-        <div className="space-y-6">
-          <Card glassmorphism>
-            <CardHeader>
-              <CardTitle className="text-lg">Resumo da Conta</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-muted/40 rounded-lg p-4 text-center">
-                  <p className="text-muted-foreground text-sm mb-1">Orçamentos</p>
-                  <p className="text-2xl font-semibold">{quotes.length}</p>
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="w-full md:w-64 flex md:flex-col space-x-2 md:space-x-0 md:space-y-2">
+            <Card 
+              className={`flex-1 cursor-pointer ${activeTab === "chat" ? "border-primary" : "border-border"}`}
+              onClick={() => setActiveTab("chat")}
+              hover
+            >
+              <CardHeader className="p-4">
+                <div className="flex items-center">
+                  <MessageCircle className="h-5 w-5 mr-2 text-primary" />
+                  <CardTitle className="text-sm">Atendimento</CardTitle>
                 </div>
-                <div className="bg-muted/40 rounded-lg p-4 text-center">
-                  <p className="text-muted-foreground text-sm mb-1">Aprovados</p>
-                  <p className="text-2xl font-semibold">{quotes.filter(q => q.status === "approved").length}</p>
+              </CardHeader>
+            </Card>
+            
+            <Card 
+              className={`flex-1 cursor-pointer ${activeTab === "quotations" ? "border-primary" : "border-border"}`}
+              onClick={() => setActiveTab("quotations")}
+              hover
+            >
+              <CardHeader className="p-4">
+                <div className="flex items-center">
+                  <FileText className="h-5 w-5 mr-2 text-primary" />
+                  <CardTitle className="text-sm">Meus Orçamentos</CardTitle>
                 </div>
-              </div>
-              
-              <div className="mt-4">
-                <p className="text-sm text-muted-foreground mb-2">Último Orçamento</p>
-                {recentQuote && (
-                  <div className="border rounded-lg p-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">{recentQuote.id}</p>
-                        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          <span>{formatDate(recentQuote.date)}</span>
-                        </div>
-                      </div>
-                      <Badge className={cn(statusConfig[recentQuote.status].color)}>
-                        {statusConfig[recentQuote.status].label}
-                      </Badge>
-                    </div>
-                    <div className="mt-2 text-sm flex flex-wrap gap-2">
-                      <div className="flex items-center gap-1">
-                        <FileText className="h-3 w-3 text-muted-foreground" />
-                        <span>{recentQuote.items} itens</span>
-                      </div>
-                      {recentQuote.total && (
-                        <div className="flex items-center gap-1">
-                          <BarChart className="h-3 w-3 text-muted-foreground" />
-                          <span>{formatCurrency(recentQuote.total)}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline" className="w-full">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Atualizar
-              </Button>
-            </CardFooter>
-          </Card>
+              </CardHeader>
+            </Card>
+          </div>
           
-          <Card glassmorphism>
-            <CardHeader>
-              <CardTitle className="text-lg">Histórico de Orçamentos</CardTitle>
-              <CardDescription>
-                Acompanhe o status de todos os seus orçamentos
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-0 py-0">
-              <ScrollArea className="h-[300px]">
-                <div className="divide-y">
-                  {quotes.map((quote) => (
-                    <div key={quote.id} className="p-4 hover:bg-muted/20 transition-colors">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium">{quote.id}</p>
-                          <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            <span>{formatDate(quote.date)}</span>
-                          </div>
-                        </div>
-                        <Badge className={cn(statusConfig[quote.status].color)}>
-                          {statusConfig[quote.status].label}
-                        </Badge>
-                      </div>
-                      <div className="mt-2 text-sm flex justify-between items-center">
-                        <div className="flex items-center gap-1">
-                          <FileText className="h-3 w-3 text-muted-foreground" />
-                          <span>{quote.items} itens</span>
-                        </div>
-                        <div className="font-medium">
-                          {formatCurrency(quote.total)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </CardContent>
-            <CardFooter className="border-t p-4">
-              <Button variant="outline" className="w-full">
-                Ver Todos os Orçamentos
-              </Button>
-            </CardFooter>
-          </Card>
+          <div className="flex-1">
+            {activeTab === "chat" ? (
+              <Card glassmorphism>
+                <CardHeader>
+                  <CardTitle>Assistente de Vendas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ChatInterface 
+                    welcomeMessage="Olá, sou o assistente de vendas da Modular Flow. Como posso te ajudar hoje?"
+                    placeholder="Digite sua mensagem aqui..."
+                  />
+                </CardContent>
+              </Card>
+            ) : (
+              <Card glassmorphism>
+                <CardHeader>
+                  <CardTitle>Meus Orçamentos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                    <p>Você ainda não possui orçamentos.</p>
+                    <p className="text-sm mt-2">Utilize nosso atendimento para solicitar um orçamento personalizado.</p>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    className="w-full" 
+                    onClick={() => setActiveTab("chat")}
+                  >
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Solicitar Orçamento
+                  </Button>
+                </CardFooter>
+              </Card>
+            )}
+          </div>
         </div>
       </div>
     </MainLayout>
