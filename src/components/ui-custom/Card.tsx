@@ -7,13 +7,15 @@ interface CardProps {
   className?: string;
   glassmorphism?: boolean;
   hover?: boolean;
+  onClick?: () => void;
 }
 
 export const Card = ({ 
   children, 
   className, 
   glassmorphism = false, 
-  hover = false 
+  hover = false,
+  onClick
 }: CardProps) => {
   return (
     <div
@@ -21,8 +23,10 @@ export const Card = ({
         "rounded-lg border p-4 shadow-subtle transition-all duration-300", 
         glassmorphism && "card-glass",
         hover && "hover:shadow-hover hover:translate-y-[-2px]",
+        onClick && "cursor-pointer",
         className
       )}
+      onClick={onClick}
     >
       {children}
     </div>
