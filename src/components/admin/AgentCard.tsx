@@ -26,7 +26,7 @@ export const AgentCard = ({
       key={id}
       className={`cursor-pointer ${isSelected ? "border-primary" : "border-border"}`}
       onClick={onClick}
-      hover="true"
+      hover={true}
     >
       <CardHeader>
         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">

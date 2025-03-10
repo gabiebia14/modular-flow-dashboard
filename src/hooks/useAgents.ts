@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "./use-toast";
 import { Agent, AgentDB } from "@/types/agent";
-import { Bot, MessageSquare, ShoppingBag } from "lucide-react";
+import { Bot, MessageSquare, ShoppingBag, LucideIcon } from "lucide-react";
 
 export const useAgents = () => {
   const { toast } = useToast();
@@ -11,7 +11,7 @@ export const useAgents = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeAgentId, setActiveAgentId] = useState<string | null>(null);
 
-  const getAgentIcon = (type: string) => {
+  const getAgentIcon = (type: string): LucideIcon => {
     switch(type) {
       case 'atendimento': return MessageSquare;
       case 'orcamento': return ShoppingBag;

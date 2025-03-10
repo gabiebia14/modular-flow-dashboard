@@ -60,7 +60,7 @@ const AdminDashboard = () => {
                   id={agent.id}
                   name={agent.name}
                   description={agent.description}
-                  icon={agent.icon || (() => null)}
+                  icon={agent.icon}
                   isActive={Boolean(agent.active)}
                   isSelected={agent.id === activeAgentId}
                   onClick={() => setActiveAgentId(agent.id)}
