@@ -28,7 +28,10 @@ const AdminDashboard = () => {
     setIsSaving(true);
     
     try {
-      await saveAgent(activeAgent);
+      const success = await saveAgent(activeAgent);
+      if (!success) {
+        console.error("Falha ao salvar o agente");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -68,11 +71,13 @@ const AdminDashboard = () => {
               ))}
             </div>
             
-            <AgentTabs
-              agent={activeAgent}
-              isSaving={isSaving}
-              onSave={handleSaveConfig}
-            />
+            {activeAgent && (
+              <AgentTabs
+                agent={activeAgent}
+                isSaving={isSaving}
+                onSave={handleSaveConfig}
+              />
+            )}
           </>
         )}
       </div>

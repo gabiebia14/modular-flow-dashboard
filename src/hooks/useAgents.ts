@@ -20,132 +20,103 @@ export const useAgents = () => {
     }
   };
 
+  // Agentes padrão para usar como fallback
+  const defaultAgents: Agent[] = [
+    {
+      id: "atendimento",
+      name: "Agente de Atendimento",
+      description: "Coleta dados de clientes e gera orçamentos preliminares",
+      prompt: "Você é um assistente de vendas da Modular Flow. Sua função é coletar informações dos clientes para gerar orçamentos. Pergunte sobre o tipo de produto, quantidade, localização de entrega, prazo e forma de pagamento.",
+      model: "gpt-4o-mini",
+      active: true,
+      type: "atendimento",
+      icon: MessageSquare
+    },
+    {
+      id: "orcamento",
+      name: "Agente de Orçamento",
+      description: "Processa os dados e cria registros de orçamento no sistema",
+      prompt: "Você é responsável por processar as informações coletadas pelo Agente de Atendimento e transformá-las em um orçamento estruturado. Organize os dados de forma clara e objetiva para o gerente de vendas.",
+      model: "gpt-4o-mini",
+      active: true,
+      type: "orcamento",
+      icon: ShoppingBag
+    },
+    {
+      id: "email",
+      name: "Agente de E-mail",
+      description: "Gera e envia e-mails com orçamentos para os clientes",
+      prompt: "Você é responsável por criar e-mails profissionais com orçamentos anexados. Seu tom deve ser cordial, claro e profissional. Sempre inclua um resumo do orçamento no corpo do e-mail.",
+      model: "claude-3-haiku",
+      active: false,
+      type: "email",
+      icon: Bot
+    }
+  ];
+
   const fetchAgents = async () => {
     try {
       setIsLoading(true);
+      console.log("Iniciando busca de agentes...");
       
-      // Tentar buscar agentes da função Edge
-      let fetchedAgents: Agent[] = [];
-      let useFallback = false;
-      
+      // Tentar buscar agentes através da função Edge
       try {
         const response = await supabase.functions.invoke('manage-agents', {
           body: { method: 'GET_ALL' }
         });
         
-        // Verificar se a resposta é válida antes de acessar suas propriedades
-        if (response && response.data && response.data.success && response.data.data && response.data.data.length > 0) {
+        console.log("Resposta da função manage-agents:", response);
+        
+        if (response && response.data && response.data.success && Array.isArray(response.data.data) && response.data.data.length > 0) {
           // Converter os agentes do banco para o formato da interface
-          fetchedAgents = response.data.data.map((agent: AgentDB) => {
-            return {
-              id: agent.agent_id,
-              name: agent.name,
-              description: agent.description || "",
-              prompt: agent.prompt,
-              model: agent.model as any,
-              active: agent.active,
-              type: agent.type as any,
-              icon: getAgentIcon(agent.type)
-            };
-          });
+          const fetchedAgents = response.data.data.map((agent: AgentDB) => ({
+            id: agent.agent_id,
+            name: agent.name,
+            description: agent.description || "",
+            prompt: agent.prompt,
+            model: agent.model as any,
+            active: Boolean(agent.active),
+            type: agent.type as any,
+            icon: getAgentIcon(agent.type)
+          }));
           
           console.log("Agentes carregados com sucesso:", fetchedAgents.length);
+          setAgents(fetchedAgents);
+          
+          // Definir o primeiro agente como ativo se nenhum estiver selecionado
+          if (fetchedAgents.length > 0 && !activeAgentId) {
+            setActiveAgentId(fetchedAgents[0].id);
+          }
+          
+          return;
         } else {
-          console.log("Nenhum agente encontrado ou resposta inválida, usando fallback");
-          useFallback = true;
+          console.log("Nenhum agente encontrado ou resposta inválida, usando agentes padrão");
         }
       } catch (error) {
         console.error("Erro ao buscar agentes da função Edge:", error);
-        useFallback = true;
       }
       
-      // Se não conseguiu buscar agentes ou não encontrou nenhum, usar os padrões
-      if (useFallback || fetchedAgents.length === 0) {
-        console.log("Usando agentes padrão");
-        fetchedAgents = [
-          {
-            id: "atendimento",
-            name: "Agente de Atendimento",
-            description: "Coleta dados de clientes e gera orçamentos preliminares",
-            prompt: "Você é um assistente de vendas da Modular Flow. Sua função é coletar informações dos clientes para gerar orçamentos. Pergunte sobre o tipo de produto, quantidade, localização de entrega, prazo e forma de pagamento.",
-            model: "gpt-4o-mini",
-            active: true,
-            type: "atendimento",
-            icon: MessageSquare
-          },
-          {
-            id: "orcamento",
-            name: "Agente de Orçamento",
-            description: "Processa os dados e cria registros de orçamento no sistema",
-            prompt: "Você é responsável por processar as informações coletadas pelo Agente de Atendimento e transformá-las em um orçamento estruturado. Organize os dados de forma clara e objetiva para o gerente de vendas.",
-            model: "gpt-4o-mini",
-            active: true,
-            type: "orcamento",
-            icon: ShoppingBag
-          },
-          {
-            id: "email",
-            name: "Agente de E-mail",
-            description: "Gera e envia e-mails com orçamentos para os clientes",
-            prompt: "Você é responsável por criar e-mails profissionais com orçamentos anexados. Seu tom deve ser cordial, claro e profissional. Sempre inclua um resumo do orçamento no corpo do e-mail.",
-            model: "claude-3-haiku",
-            active: false,
-            type: "email",
-            icon: Bot
-          }
-        ];
+      // Se chegou aqui, significa que houve algum problema com a busca dos agentes
+      // Vamos usar os agentes padrão
+      console.log("Usando agentes padrão");
+      setAgents(defaultAgents);
+      
+      // Definir o primeiro agente como ativo se nenhum estiver selecionado
+      if (!activeAgentId) {
+        setActiveAgentId(defaultAgents[0].id);
       }
       
-      setAgents(fetchedAgents);
-      
-      // Set first agent as active if none is selected
-      if (fetchedAgents.length > 0 && !activeAgentId) {
-        setActiveAgentId(fetchedAgents[0].id);
-      }
     } catch (error) {
       console.error("Erro ao buscar agentes:", error);
       toast({
         title: "Erro ao carregar agentes",
-        description: "Não foi possível recuperar os agentes do banco de dados.",
+        description: "Não foi possível recuperar os agentes do banco de dados. Usando valores padrão.",
         variant: "destructive",
       });
       
-      // Em caso de falha total, pelo menos definir alguns agentes padrão
-      const defaultAgents: Agent[] = [
-        {
-          id: "atendimento",
-          name: "Agente de Atendimento",
-          description: "Coleta dados de clientes e gera orçamentos preliminares",
-          prompt: "Você é um assistente de vendas da Modular Flow. Sua função é coletar informações dos clientes para gerar orçamentos. Pergunte sobre o tipo de produto, quantidade, localização de entrega, prazo e forma de pagamento.",
-          model: "gpt-4o-mini",
-          active: true,
-          type: "atendimento",
-          icon: MessageSquare
-        },
-        {
-          id: "orcamento",
-          name: "Agente de Orçamento",
-          description: "Processa os dados e cria registros de orçamento no sistema",
-          prompt: "Você é responsável por processar as informações coletadas pelo Agente de Atendimento e transformá-las em um orçamento estruturado. Organize os dados de forma clara e objetiva para o gerente de vendas.",
-          model: "gpt-4o-mini",
-          active: true,
-          type: "orcamento",
-          icon: ShoppingBag
-        },
-        {
-          id: "email",
-          name: "Agente de E-mail",
-          description: "Gera e envia e-mails com orçamentos para os clientes",
-          prompt: "Você é responsável por criar e-mails profissionais com orçamentos anexados. Seu tom deve ser cordial, claro e profissional. Sempre inclua um resumo do orçamento no corpo do e-mail.",
-          model: "claude-3-haiku",
-          active: false,
-          type: "email",
-          icon: Bot
-        }
-      ];
-      
+      // Em caso de falha total, definir agentes padrão
       setAgents(defaultAgents);
-      if (defaultAgents.length > 0) {
+      if (!activeAgentId && defaultAgents.length > 0) {
         setActiveAgentId(defaultAgents[0].id);
       }
     } finally {
@@ -154,25 +125,29 @@ export const useAgents = () => {
   };
 
   const saveAgent = async (agent: Agent) => {
-    // Preparar os dados para o formato do banco
-    const agentData = {
-      agent_id: agent.id,
-      name: agent.name,
-      description: agent.description,
-      prompt: agent.prompt,
-      model: agent.model,
-      active: Boolean(agent.active), // Conversão explícita para boolean
-      type: agent.type
-    };
-    
     try {
-      // Verificar se o agente já existe no banco
+      console.log("Salvando agente:", agent);
+      
+      // Preparar os dados para o formato do banco
+      const agentData = {
+        agent_id: agent.id,
+        name: agent.name,
+        description: agent.description,
+        prompt: agent.prompt,
+        model: agent.model,
+        active: Boolean(agent.active),
+        type: agent.type
+      };
+      
+      // Chamar a função Edge para salvar o agente
       const response = await supabase.functions.invoke('manage-agents', {
         body: { 
           method: 'UPDATE',
           agentData
         }
       });
+      
+      console.log("Resposta da atualização:", response);
       
       if (response && response.data && response.data.success) {
         toast({
@@ -183,12 +158,13 @@ export const useAgents = () => {
         
         // Atualizar lista de agentes localmente
         setAgents(prev => 
-          prev.map(a => a.id === agent.id ? agent : a)
+          prev.map(a => a.id === agent.id ? {...agent, icon: getAgentIcon(agent.type)} : a)
         );
         
         return true;
       } else {
-        throw new Error((response?.data?.error) ? response.data.error : "Erro ao comunicar com o servidor");
+        const errorMsg = (response?.data?.error) ? response.data.error : "Erro ao comunicar com o servidor";
+        throw new Error(errorMsg);
       }
     } catch (error) {
       console.error("Erro ao salvar agente:", error);
@@ -201,7 +177,7 @@ export const useAgents = () => {
     }
   };
 
-  // Buscar agentes ao carregar
+  // Buscar agentes ao carregar o componente
   useEffect(() => {
     fetchAgents();
   }, []);
