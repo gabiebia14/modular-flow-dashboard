@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Check, Copy, Edit, Save, Plus, Trash, Info } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "./Card";
@@ -14,18 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import type { Agent } from "@/types/agent";
 
-interface Agent {
-  id: string;
-  name: string;
-  description: string;
-  prompt: string;
-  model: "gpt-4o" | "gpt-4o-mini" | "claude-3-haiku" | "claude-3-sonnet";
-  active: boolean;
-  type: "atendimento" | "orcamento" | "validacao" | "email";
+interface AgentConfigProps {
+  agentName?: string;
+  defaultPrompt?: string;
 }
 
-export const AgentConfig = () => {
+export const AgentConfig = ({ agentName, defaultPrompt }: AgentConfigProps) => {
   const [agents, setAgents] = useState<Agent[]>([
     {
       id: "agent-001",

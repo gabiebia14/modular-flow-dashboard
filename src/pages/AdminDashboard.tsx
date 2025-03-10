@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui-custom/Card";
@@ -16,23 +17,32 @@ const AdminDashboard = () => {
     {
       id: "atendimento",
       name: "Agente de Atendimento",
-      icon: MessageSquare,
       description: "Coleta dados de clientes e gera orçamentos preliminares",
-      prompt: "Você é um assistente de vendas da Modular Flow. Sua função é coletar informações dos clientes para gerar orçamentos. Pergunte sobre o tipo de produto, quantidade, localização de entrega, prazo e forma de pagamento."
+      prompt: "Você é um assistente de vendas da Modular Flow. Sua função é coletar informações dos clientes para gerar orçamentos. Pergunte sobre o tipo de produto, quantidade, localização de entrega, prazo e forma de pagamento.",
+      model: "gpt-4o-mini",
+      active: true,
+      type: "atendimento",
+      icon: MessageSquare
     },
     {
       id: "orcamento",
       name: "Agente de Orçamento",
-      icon: ShoppingBag,
       description: "Processa os dados e cria registros de orçamento no sistema",
-      prompt: "Você é responsável por processar as informações coletadas pelo Agente de Atendimento e transformá-las em um orçamento estruturado. Organize os dados de forma clara e objetiva para o gerente de vendas."
+      prompt: "Você é responsável por processar as informações coletadas pelo Agente de Atendimento e transformá-las em um orçamento estruturado. Organize os dados de forma clara e objetiva para o gerente de vendas.",
+      model: "gpt-4o-mini",
+      active: true,
+      type: "orcamento",
+      icon: ShoppingBag
     },
     {
       id: "email",
       name: "Agente de E-mail",
-      icon: Bot,
       description: "Gera e envia e-mails com orçamentos para os clientes",
-      prompt: "Você é responsável por criar e-mails profissionais com orçamentos anexados. Seu tom deve ser cordial, claro e profissional. Sempre inclua um resumo do orçamento no corpo do e-mail."
+      prompt: "Você é responsável por criar e-mails profissionais com orçamentos anexados. Seu tom deve ser cordial, claro e profissional. Sempre inclua um resumo do orçamento no corpo do e-mail.",
+      model: "claude-3-haiku",
+      active: false,
+      type: "email",
+      icon: Bot
     }
   ];
   
@@ -49,22 +59,25 @@ const AdminDashboard = () => {
         </Button>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {agents.map(agent => (
-            <Card 
-              key={agent.id} 
-              className={`cursor-pointer ${activeAgent === agent.id ? "border-primary" : "border-border"}`}
-              onClick={() => setActiveAgent(agent.id)}
-              hover
-            >
-              <CardHeader>
-                <div className={`w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2`}>
-                  <agent.icon className="h-5 w-5 text-primary" />
-                </div>
-                <CardTitle>{agent.name}</CardTitle>
-                <CardDescription>{agent.description}</CardDescription>
-              </CardHeader>
-            </Card>
-          ))}
+          {agents.map(agent => {
+            const Icon = agent.icon;
+            return (
+              <Card 
+                key={agent.id} 
+                className={`cursor-pointer ${activeAgent === agent.id ? "border-primary" : "border-border"}`}
+                onClick={() => setActiveAgent(agent.id)}
+                hover
+              >
+                <CardHeader>
+                  <div className={`w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2`}>
+                    {Icon && <Icon className="h-5 w-5 text-primary" />}
+                  </div>
+                  <CardTitle>{agent.name}</CardTitle>
+                  <CardDescription>{agent.description}</CardDescription>
+                </CardHeader>
+              </Card>
+            );
+          })}
         </div>
         
         <Card>
