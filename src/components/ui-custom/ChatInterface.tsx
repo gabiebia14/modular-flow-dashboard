@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Send, Paperclip, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,19 +6,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { Card } from "./Card";
+import type { ChatInterfaceProps, Message } from "@/types/chat";
 
-interface Message {
-  id: string;
-  content: string;
-  sender: "user" | "agent";
-  timestamp: Date;
-}
-
-export const ChatInterface = () => {
+export const ChatInterface = ({ 
+  welcomeMessage = "Olá, como posso ajudar?",
+  placeholder = "Digite sua mensagem..."
+}: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      content: "Olá, sou o assistente de vendas da IPT Teixeira, como posso te ajudar hoje?",
+      content: welcomeMessage,
       sender: "agent",
       timestamp: new Date(Date.now() - 60000),
     },
@@ -28,7 +24,6 @@ export const ChatInterface = () => {
   const [isTyping, setIsTyping] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // Simulate agent responses
   const simulateAgentResponse = (userMessage: string) => {
     setIsTyping(true);
     
@@ -80,7 +75,6 @@ export const ChatInterface = () => {
     }
   };
 
-  // Auto scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
@@ -158,7 +152,7 @@ export const ChatInterface = () => {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Digite sua mensagem..."
+            placeholder={placeholder}
             className="min-h-[80px] resize-none"
           />
           <Button

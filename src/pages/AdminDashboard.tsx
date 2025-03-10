@@ -1,18 +1,18 @@
-
 import { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui-custom/Card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui-custom/Card";
 import { AgentConfig } from "@/components/ui-custom/AgentConfig";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeftCircle, Bot, MessageSquare, Settings, ShoppingBag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import type { Agent } from "@/types/agent";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [activeAgent, setActiveAgent] = useState("atendimento");
   
-  const agents = [
+  const agents: Agent[] = [
     {
       id: "atendimento",
       name: "Agente de Atendimento",
