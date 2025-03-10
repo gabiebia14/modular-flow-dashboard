@@ -9,7 +9,75 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      agents: {
+        Row: {
+          active: boolean | null
+          agent_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          model: string
+          name: string
+          prompt: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          agent_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          model: string
+          name: string
+          prompt: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          agent_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          model?: string
+          name?: string
+          prompt?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      api_keys: {
+        Row: {
+          active: boolean | null
+          api_key: string
+          created_at: string | null
+          endpoint: string | null
+          id: string
+          provider: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          api_key: string
+          created_at?: string | null
+          endpoint?: string | null
+          id?: string
+          provider: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          api_key?: string
+          created_at?: string | null
+          endpoint?: string | null
+          id?: string
+          provider?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
