@@ -18,10 +18,6 @@ enabled = true
 port = 54323
 api_url = "http://localhost"
 
-[[fetch_schema.extensions]]
-name = "pg_net"
-schema = "net"
-
 [functions]
 [functions.manage-agents]
 verify_jwt = false
@@ -29,3 +25,4 @@ verify_jwt = false
 verify_jwt = false
 [functions.chat-with-agent]
 verify_jwt = false
+
