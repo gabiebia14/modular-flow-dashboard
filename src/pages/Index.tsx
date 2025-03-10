@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, MessageCircle, FileText, Settings } from "lucide-react";
@@ -11,7 +10,6 @@ const Index = () => {
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
-    // Start animations after a short delay
     const timer = setTimeout(() => {
       setAnimate(true);
     }, 100);
@@ -76,11 +74,10 @@ const Index = () => {
             <Card 
               key={type.title} 
               className={cn(
-                "border-2 hover:border-primary/50 cursor-pointer",
-                "opacity-0 transform translate-y-8 transition-all duration-700 ease-out",
-                animate && "opacity-100 transform-none"
+                "border-2 hover:border-primary/50 cursor-pointer opacity-0 transform translate-y-8",
+                animate && "opacity-100 transform-none",
+                `transition-all duration-700 ease-out delay-[${300 + index * 100}ms]`
               )}
-              style={{ transitionDelay: `${300 + index * 100}ms` }}
               glassmorphism
               hover
               onClick={() => navigate(type.path)}

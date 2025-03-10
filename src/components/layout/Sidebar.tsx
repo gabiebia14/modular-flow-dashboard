@@ -1,27 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { 
-  Home, 
-  MessageCircle, 
-  FileText, 
-  Settings, 
-  Users, 
-  LogOut, 
-  ChevronLeft, 
-  ChevronRight,
-  Menu
-} from "lucide-react";
+import { Home, MessageCircle, FileText, Settings, Users, LogOut, ChevronLeft, ChevronRight, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { 
-  Sidebar as SidebarComponent,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarTrigger
-} from "@/components/ui/sidebar";
+import { Sidebar as SidebarComponent, SidebarContent, SidebarFooter, SidebarHeader, SidebarTrigger } from "@/components/ui/sidebar";
 
 type SidebarLinkProps = {
   to: string;
@@ -78,22 +61,18 @@ export const Sidebar = () => {
   }, [isMobile]);
 
   const sidebarLinks = [
-    { to: "/", icon: Home, label: "Home", allowedUsers: ["client", "manager", "admin"] as const },
-    { to: "/client", icon: MessageCircle, label: "Atendimento", allowedUsers: ["client"] as const },
-    { to: "/manager", icon: FileText, label: "Orçamentos", allowedUsers: ["manager"] as const },
-    { to: "/admin", icon: Settings, label: "Configuração", allowedUsers: ["admin"] as const },
-    { to: "/clients", icon: Users, label: "Clientes", allowedUsers: ["manager", "admin"] as const },
+    { to: "/", icon: Home, label: "Home", allowedUsers: ["client", "manager", "admin"] as Array<"client" | "manager" | "admin"> },
+    { to: "/client", icon: MessageCircle, label: "Atendimento", allowedUsers: ["client"] as Array<"client" | "manager" | "admin"> },
+    { to: "/manager", icon: FileText, label: "Orçamentos", allowedUsers: ["manager"] as Array<"client" | "manager" | "admin"> },
+    { to: "/admin", icon: Settings, label: "Configuração", allowedUsers: ["admin"] as Array<"client" | "manager" | "admin"> },
+    { to: "/clients", icon: Users, label: "Clientes", allowedUsers: ["manager", "admin"] as Array<"client" | "manager" | "admin"> }
   ];
 
   return (
-    <SidebarComponent 
-      expanded={expanded} 
-      onExpandedChange={setExpanded}
-      className={cn(
-        "border-r bg-glass transition-all duration-300",
-        expanded ? "w-64" : "w-16"
-      )}
-    >
+    <div className={cn(
+      "border-r bg-glass transition-all duration-300",
+      expanded ? "w-64" : "w-16"
+    )}>
       <SidebarHeader className="h-16 flex items-center px-4 border-b">
         <div className="flex items-center overflow-hidden w-full">
           {expanded ? (
@@ -174,6 +153,6 @@ export const Sidebar = () => {
           </Button>
         </SidebarTrigger>
       )}
-    </SidebarComponent>
+    </div>
   );
 };
