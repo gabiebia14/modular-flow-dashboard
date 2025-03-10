@@ -55,6 +55,8 @@ export type Database = {
           created_at: string | null
           endpoint: string | null
           id: string
+          model_type: string | null
+          model_version: string | null
           provider: string
           updated_at: string | null
         }
@@ -64,6 +66,8 @@ export type Database = {
           created_at?: string | null
           endpoint?: string | null
           id?: string
+          model_type?: string | null
+          model_version?: string | null
           provider: string
           updated_at?: string | null
         }
@@ -73,6 +77,8 @@ export type Database = {
           created_at?: string | null
           endpoint?: string | null
           id?: string
+          model_type?: string | null
+          model_version?: string | null
           provider?: string
           updated_at?: string | null
         }

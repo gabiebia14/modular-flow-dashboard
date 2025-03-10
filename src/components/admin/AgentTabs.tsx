@@ -56,7 +56,7 @@ export const AgentTabs = ({ agent, isSaving, onSave, onUpdateAgent }: AgentTabsP
           </TabsContent>
           
           <TabsContent value="model">
-            <AgentModelTab />
+            <AgentModelTab agent={agent} onUpdate={onUpdateAgent} />
           </TabsContent>
           
           <TabsContent value="api">

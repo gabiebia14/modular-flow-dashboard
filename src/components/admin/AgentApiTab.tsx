@@ -1,10 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui-custom/Card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, KeyRound, Loader2, Server } from "lucide-react";
+import { AlertCircle, KeyRound, Loader2, Server, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,6 +15,50 @@ export const AgentApiTab = () => {
   const [selectedProvider, setSelectedProvider] = useState("openai");
   const [isSavingApiKey, setIsSavingApiKey] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [existingProviders, setExistingProviders] = useState<string[]>([]);
+  
+  useEffect(() => {
+    // Carregar provedores existentes
+    const loadExistingProviders = async () => {
+      try {
+        const response = await supabase.functions.invoke('manage-api-keys', {
+          body: { 
+            method: 'GET_ALL'
+          }
+        });
+        
+        if (response.data && response.data.success && Array.isArray(response.data.data)) {
+          const providers = response.data.data.map((key: any) => key.provider);
+          setExistingProviders(providers);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar provedores:", error);
+      }
+    };
+    
+    loadExistingProviders();
+  }, []);
+  
+  // Ajustar endpoint padrão com base no provedor selecionado
+  useEffect(() => {
+    switch(selectedProvider) {
+      case "openai":
+        setApiEndpoint("https://api.openai.com/v1/chat/completions");
+        break;
+      case "google":
+        setApiEndpoint("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent");
+        break;
+      case "deepseek":
+        setApiEndpoint("https://api.deepseek.com/v1/chat/completions");
+        break;
+      default:
+        setApiEndpoint("");
+    }
+  }, [selectedProvider]);
+
+  const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedProvider(e.target.value);
+  };
   
   const handleSaveApiKey = async () => {
     if (!apiKey || !selectedProvider) {
@@ -29,10 +73,30 @@ export const AgentApiTab = () => {
     setIsSavingApiKey(true);
     
     try {
+      let modelType = "";
+      let modelVersion = "";
+      
+      switch(selectedProvider) {
+        case "openai":
+          modelType = "gpt";
+          modelVersion = "4o";
+          break;
+        case "google":
+          modelType = "gemini";
+          modelVersion = "pro";
+          break;
+        case "deepseek":
+          modelType = "deepseek";
+          modelVersion = "chat";
+          break;
+      }
+      
       const apiKeyData = {
         provider: selectedProvider,
         api_key: apiKey,
         endpoint: apiEndpoint || null,
+        model_type: modelType,
+        model_version: modelVersion,
         active: true
       };
       
@@ -50,9 +114,13 @@ export const AgentApiTab = () => {
           variant: "default",
         });
         
+        // Atualizar lista de provedores existentes
+        if (!existingProviders.includes(selectedProvider)) {
+          setExistingProviders([...existingProviders, selectedProvider]);
+        }
+        
         // Limpar campos
         setApiKey("");
-        setApiEndpoint("");
       } else {
         throw new Error(response.data.error || "Erro desconhecido");
       }
@@ -122,18 +190,24 @@ export const AgentApiTab = () => {
                 <select 
                   className="w-full border border-input bg-background rounded-md p-2"
                   value={selectedProvider}
-                  onChange={(e) => setSelectedProvider(e.target.value)}
+                  onChange={handleProviderChange}
                 >
                   <option value="openai">OpenAI</option>
-                  <option value="anthropic">Anthropic</option>
-                  <option value="google">Google</option>
+                  <option value="google">Google (Gemini)</option>
+                  <option value="deepseek">Deepseek</option>
                 </select>
+                {existingProviders.includes(selectedProvider) && (
+                  <div className="flex items-center mt-1 text-xs text-blue-500">
+                    <Info className="h-3 w-3 mr-1" />
+                    <span>Chave já configurada para este provedor</span>
+                  </div>
+                )}
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label>Chave de API</Label>
                 <Input 
                   type="password" 
-                  placeholder="sk-..." 
+                  placeholder={selectedProvider === "openai" ? "sk-..." : selectedProvider === "google" ? "AIza..." : "dsk-..."}
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                 />
@@ -141,15 +215,15 @@ export const AgentApiTab = () => {
             </div>
             
             <div className="space-y-2">
-              <Label>Endpoint da API (opcional)</Label>
+              <Label>Endpoint da API</Label>
               <Input 
                 type="text" 
-                placeholder="https://api.example.com/v1" 
+                placeholder="URL do endpoint da API"
                 value={apiEndpoint}
                 onChange={(e) => setApiEndpoint(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Deixe em branco para usar o endpoint padrão do provedor.
+                Endpoint padrão do provedor será usado se deixado em branco.
               </p>
             </div>
             
@@ -157,7 +231,7 @@ export const AgentApiTab = () => {
               <Button 
                 variant="outline" 
                 onClick={handleTestConnection}
-                disabled={isTestingConnection || !selectedProvider}
+                disabled={isTestingConnection || !existingProviders.includes(selectedProvider)}
               >
                 {isTestingConnection ? (
                   <>
@@ -188,6 +262,28 @@ export const AgentApiTab = () => {
                 )}
               </Button>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Provedores Configurados</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {existingProviders.length > 0 ? (
+              existingProviders.map((provider) => (
+                <div key={provider} className="p-4 border rounded-md flex items-center space-x-2">
+                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                  <span className="font-medium">{provider.charAt(0).toUpperCase() + provider.slice(1)}</span>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-4 text-muted-foreground">
+                Nenhum provedor configurado ainda
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -27,7 +27,7 @@ serve(async (req) => {
         // Retorna apenas metadados das chaves de API, não as chaves em si
         const { data: apiKeys, error: fetchError } = await supabase
           .from("api_keys")
-          .select("id, provider, endpoint, active, created_at, updated_at");
+          .select("id, provider, endpoint, model_type, model_version, active, created_at, updated_at");
 
         if (fetchError) throw new Error(fetchError.message);
         
@@ -52,11 +52,13 @@ serve(async (req) => {
             .update({
               api_key: apiKeyData.api_key,
               endpoint: apiKeyData.endpoint,
+              model_type: apiKeyData.model_type,
+              model_version: apiKeyData.model_version,
               active: apiKeyData.active,
               updated_at: new Date().toISOString()
             })
             .eq("id", existingKey.id)
-            .select("id, provider, endpoint, active, created_at, updated_at")
+            .select("id, provider, endpoint, model_type, model_version, active, created_at, updated_at")
             .single();
 
           if (updateError) throw new Error(updateError.message);
@@ -66,7 +68,7 @@ serve(async (req) => {
           const { data, error: insertError } = await supabase
             .from("api_keys")
             .insert([apiKeyData])
-            .select("id, provider, endpoint, active, created_at, updated_at")
+            .select("id, provider, endpoint, model_type, model_version, active, created_at, updated_at")
             .single();
 
           if (insertError) throw new Error(insertError.message);
@@ -93,16 +95,16 @@ serve(async (req) => {
         // Busca a chave de API para teste
         const { data: keyData, error: keyError } = await supabase
           .from("api_keys")
-          .select("api_key, endpoint")
+          .select("api_key, endpoint, provider")
           .eq("provider", apiKeyData.provider)
           .single();
 
         if (keyError) throw new Error("Chave de API não encontrada");
 
-        // Implementa um teste simples para cada provedor
+        // Implementa um teste específico para cada provedor
         let testResult = false;
         
-        if (apiKeyData.provider === "openai") {
+        if (keyData.provider === "openai") {
           const endpoint = keyData.endpoint || "https://api.openai.com/v1/models";
           const response = await fetch(endpoint, {
             headers: {
@@ -111,20 +113,20 @@ serve(async (req) => {
             }
           });
           testResult = response.status < 300;
-        } else if (apiKeyData.provider === "anthropic") {
-          const endpoint = keyData.endpoint || "https://api.anthropic.com/v1/messages";
+        } else if (keyData.provider === "google") {
+          // Para o Google, testamos listando modelos
+          const baseUrl = "https://generativelanguage.googleapis.com/v1beta/models";
+          const apiKeyParam = `?key=${keyData.api_key}`;
+          const response = await fetch(`${baseUrl}${apiKeyParam}`);
+          testResult = response.status < 300;
+        } else if (keyData.provider === "deepseek") {
+          // Para o Deepseek, testamos com uma requisição simples
+          const endpoint = keyData.endpoint || "https://api.deepseek.com/v1/models";
           const response = await fetch(endpoint, {
-            method: "POST",
             headers: {
-              "x-api-key": keyData.api_key,
-              "anthropic-version": "2023-06-01",
+              "Authorization": `Bearer ${keyData.api_key}`,
               "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              model: "claude-3-haiku-20240307",
-              max_tokens: 10,
-              messages: [{ role: "user", content: "Hello" }]
-            })
+            }
           });
           testResult = response.status < 300;
         }
