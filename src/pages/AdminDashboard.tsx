@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { 
   ArrowLeftCircle, Bot, MessageSquare, Settings, ShoppingBag, 
   CheckCircle2, AlertCircle, Loader2, KeyRound, Server 
@@ -124,7 +125,7 @@ const AdminDashboard = () => {
         description: currentAgent.description,
         prompt: currentAgent.prompt,
         model: currentAgent.model,
-        active: currentAgent.active,
+        active: Boolean(currentAgent.active), // Conversão explícita para boolean
         type: currentAgent.type
       };
       
