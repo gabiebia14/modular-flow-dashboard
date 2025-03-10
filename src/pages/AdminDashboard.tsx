@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { AgentCard } from "@/components/admin/AgentCard";
 import { AgentTabs } from "@/components/admin/AgentTabs";
 import { useAgents } from "@/hooks/useAgents";
+import { Agent } from "@/types/agent";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -17,7 +18,8 @@ const AdminDashboard = () => {
     isLoading, 
     activeAgentId, 
     setActiveAgentId,
-    saveAgent
+    saveAgent,
+    setAgents
   } = useAgents();
   
   const activeAgent = agents.find(a => a.id === activeAgentId);
@@ -35,6 +37,15 @@ const AdminDashboard = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleUpdateAgent = (updatedAgent: Agent) => {
+    // Atualiza o agente no estado local
+    setAgents(
+      agents.map(agent => 
+        agent.id === updatedAgent.id ? updatedAgent : agent
+      )
+    );
   };
   
   return (
@@ -64,7 +75,7 @@ const AdminDashboard = () => {
                   name={agent.name}
                   description={agent.description}
                   icon={agent.icon}
-                  isActive={Boolean(agent.active)}
+                  isActive={agent.active}
                   isSelected={agent.id === activeAgentId}
                   onClick={() => setActiveAgentId(agent.id)}
                 />
@@ -76,6 +87,7 @@ const AdminDashboard = () => {
                 agent={activeAgent}
                 isSaving={isSaving}
                 onSave={handleSaveConfig}
+                onUpdateAgent={handleUpdateAgent}
               />
             )}
           </>

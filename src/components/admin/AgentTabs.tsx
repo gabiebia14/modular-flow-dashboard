@@ -12,9 +12,10 @@ interface AgentTabsProps {
   agent: Agent | undefined;
   isSaving: boolean;
   onSave: () => void;
+  onUpdateAgent: (updatedAgent: Agent) => void;
 }
 
-export const AgentTabs = ({ agent, isSaving, onSave }: AgentTabsProps) => {
+export const AgentTabs = ({ agent, isSaving, onSave, onUpdateAgent }: AgentTabsProps) => {
   if (!agent) return null;
 
   return (
@@ -51,7 +52,7 @@ export const AgentTabs = ({ agent, isSaving, onSave }: AgentTabsProps) => {
           </TabsList>
           
           <TabsContent value="prompts">
-            <AgentPromptTab agentName={agent.name} prompt={agent.prompt} />
+            <AgentPromptTab agent={agent} onUpdate={onUpdateAgent} />
           </TabsContent>
           
           <TabsContent value="model">

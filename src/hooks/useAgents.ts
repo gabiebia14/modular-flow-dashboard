@@ -184,6 +184,7 @@ export const useAgents = () => {
 
   return {
     agents,
+    setAgents, // Exportando a função setAgents para permitir atualizações diretas
     isLoading,
     activeAgentId,
     setActiveAgentId,
