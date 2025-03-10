@@ -5,13 +5,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { AgentConfig } from "@/components/ui-custom/AgentConfig";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeftCircle, Bot, MessageSquare, Settings, ShoppingBag } from "lucide-react";
+import { ArrowLeftCircle, Bot, MessageSquare, Settings, ShoppingBag, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import type { Agent } from "@/types/agent";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [activeAgent, setActiveAgent] = useState("atendimento");
+  const [isSaving, setIsSaving] = useState(false);
   
   const agents: Agent[] = [
     {
@@ -45,6 +48,20 @@ const AdminDashboard = () => {
       icon: Bot
     }
   ];
+
+  const handleSaveConfig = () => {
+    setIsSaving(true);
+    
+    // Simulação de um processo de salvamento
+    setTimeout(() => {
+      setIsSaving(false);
+      toast({
+        title: "Configurações salvas",
+        description: "As configurações do agente foram atualizadas com sucesso.",
+        variant: "default",
+      });
+    }, 1500);
+  };
   
   return (
     <MainLayout title="Painel Administrativo" subtitle="Configure agentes, personalize prompts e gerencie as configurações do sistema">
@@ -66,7 +83,7 @@ const AdminDashboard = () => {
                 key={agent.id} 
                 className={`cursor-pointer ${activeAgent === agent.id ? "border-primary" : "border-border"}`}
                 onClick={() => setActiveAgent(agent.id)}
-                hover
+                hover="true"
               >
                 <CardHeader>
                   <div className={`w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2`}>
@@ -89,9 +106,18 @@ const AdminDashboard = () => {
                   Personalize o comportamento do agente {agents.find(a => a.id === activeAgent)?.name.toLowerCase()}
                 </CardDescription>
               </div>
-              <Button>
-                <Settings className="h-4 w-4 mr-2" />
-                Configurações Avançadas
+              <Button onClick={handleSaveConfig} disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <span className="animate-spin mr-2">⟳</span>
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Configurações Avançadas
+                  </>
+                )}
               </Button>
             </div>
           </CardHeader>
@@ -184,7 +210,23 @@ const AdminDashboard = () => {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button className="w-full">Salvar Configurações</Button>
+                    <Button 
+                      className="w-full"
+                      onClick={handleSaveConfig}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? (
+                        <>
+                          <span className="animate-spin mr-2">⟳</span>
+                          Salvando...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                          Salvar Configurações
+                        </>
+                      )}
+                    </Button>
                   </CardFooter>
                 </Card>
               </TabsContent>
