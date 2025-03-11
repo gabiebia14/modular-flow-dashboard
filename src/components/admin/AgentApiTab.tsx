@@ -89,6 +89,7 @@ export const AgentApiTab = () => {
       });
       
       if (response.data && response.data.success) {
+        console.log("Chave Gemini adicionada com sucesso:", response.data);
         toast({
           title: "Chave de exemplo adicionada",
           description: "A chave de API para Gemini foi adicionada como exemplo.",
@@ -96,7 +97,7 @@ export const AgentApiTab = () => {
         });
         
         // Atualizar lista de chaves
-        loadExistingKeys();
+        await loadExistingKeys();
       } else {
         console.error("Erro ao adicionar chave Gemini de exemplo:", response);
       }
@@ -204,7 +205,7 @@ export const AgentApiTab = () => {
         // Limpar campos e atualizar lista
         setApiKey("");
         setSelectedKeyId(null);
-        loadExistingKeys();
+        await loadExistingKeys();
       } else {
         const errorMessage = response.error || (response.data && response.data.error) || "Erro desconhecido";
         throw new Error(errorMessage);
@@ -245,7 +246,7 @@ export const AgentApiTab = () => {
         });
         
         // Atualizar lista de chaves existentes
-        loadExistingKeys();
+        await loadExistingKeys();
         
         // Se a chave selecionada foi removida, limpar seleção
         if (selectedKeyId === keyId) {
