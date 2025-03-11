@@ -21,6 +21,7 @@ serve(async (req) => {
   try {
     // Verificar se a requisição contém um corpo válido
     if (!req.body) {
+      console.error("Corpo da requisição está vazio");
       throw new Error("Corpo da requisição está vazio");
     }
 
@@ -56,11 +57,13 @@ serve(async (req) => {
 
       case "CREATE":
         if (!agentData) {
+          console.error("Dados do agente não fornecidos");
           throw new Error("Dados do agente não fornecidos");
         }
         
         // Validar dados do agente
         if (!agentData.agent_id || !agentData.name || !agentData.prompt || !agentData.model || !agentData.type) {
+          console.error("Campos obrigatórios não fornecidos", agentData);
           throw new Error("Campos obrigatórios não fornecidos: agent_id, name, prompt, model, type");
         }
 
@@ -75,17 +78,21 @@ serve(async (req) => {
           throw new Error(createError.message);
         }
         
+        console.log("Agente criado com sucesso:", newAgent);
+        
         return new Response(JSON.stringify({ success: true, data: newAgent }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
 
       case "UPDATE":
         if (!agentData || !agentData.agent_id) {
+          console.error("ID do agente não fornecido");
           throw new Error("ID do agente não fornecido");
         }
         
         // Validar dados do agente
         if (!agentData.name || !agentData.prompt || !agentData.model || !agentData.type) {
+          console.error("Campos obrigatórios não fornecidos", agentData);
           throw new Error("Campos obrigatórios não fornecidos: name, prompt, model, type");
         }
 
@@ -118,6 +125,8 @@ serve(async (req) => {
               throw new Error(insertError.message);
             }
             
+            console.log("Agente inserido com sucesso:", insertedAgent);
+            
             return new Response(JSON.stringify({ success: true, data: insertedAgent }), {
               headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
@@ -131,6 +140,9 @@ serve(async (req) => {
         // Atualizar os campos
         agentData.updated_at = new Date().toISOString();
         
+        // Fazer log dos dados
+        console.log("Dados a serem atualizados:", JSON.stringify(agentData, null, 2));
+        
         const { data: updatedAgent, error: updateError } = await supabase
           .from("agents")
           .update(agentData)
@@ -143,12 +155,15 @@ serve(async (req) => {
           throw new Error(updateError.message);
         }
         
+        console.log("Agente atualizado com sucesso:", updatedAgent);
+        
         return new Response(JSON.stringify({ success: true, data: updatedAgent }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
 
       case "DELETE":
         if (!agentData || !agentData.agent_id) {
+          console.error("ID do agente não fornecido");
           throw new Error("ID do agente não fornecido");
         }
 
@@ -162,11 +177,14 @@ serve(async (req) => {
           throw new Error(deleteError.message);
         }
         
+        console.log("Agente excluído com sucesso:", agentData.agent_id);
+        
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
 
       default:
+        console.error(`Método não suportado: ${method}`);
         throw new Error(`Método não suportado: ${method}`);
     }
   } catch (error) {

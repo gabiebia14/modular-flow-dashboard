@@ -9,11 +9,13 @@ import { AgentTabs } from "@/components/admin/AgentTabs";
 import { useAgents } from "@/hooks/useAgents";
 import { Agent } from "@/types/agent";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   
   const { 
     agents, 
@@ -35,13 +37,32 @@ const AdminDashboard = () => {
       const success = await saveAgent(activeAgent);
       if (!success) {
         console.error("Falha ao salvar o agente");
+        toast({
+          title: "Erro ao salvar configurações",
+          description: "Não foi possível persistir as alterações no servidor. Tente novamente mais tarde.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Configurações salvas",
+          description: "As alterações foram persistidas com sucesso.",
+          variant: "default",
+        });
       }
+    } catch (error) {
+      console.error("Erro ao salvar o agente:", error);
+      toast({
+        title: "Erro ao salvar configurações",
+        description: "Ocorreu um erro ao salvar as configurações. Tente novamente mais tarde.",
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleUpdateAgent = (updatedAgent: Agent) => {
+    console.log("Atualizando agente:", updatedAgent);
     // Atualiza o agente no estado local
     setAgents(
       agents.map(agent => 

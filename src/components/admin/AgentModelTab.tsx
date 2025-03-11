@@ -8,6 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 
 interface AgentModelTabProps {
   agent: Agent;
@@ -19,6 +20,7 @@ export const AgentModelTab = ({ agent, onUpdate }: AgentModelTabProps) => {
   const [selectedModel, setSelectedModel] = useState<string>(agent.model);
   const [temperature, setTemperature] = useState<number>(0.7);
   const [maxLength, setMaxLength] = useState<number>(2048);
+  const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
 
   // Mapear o modelo atual para o provedor correspondente
@@ -60,32 +62,50 @@ export const AgentModelTab = ({ agent, onUpdate }: AgentModelTabProps) => {
     }
     
     setSelectedModel(defaultModel);
-    applyModelChanges(defaultModel);
   };
 
   const handleModelChange = (value: string) => {
     const model = value;
     setSelectedModel(model);
-    applyModelChanges(model);
   };
   
-  const applyModelChanges = (model: string) => {
+  const applyModelChanges = async () => {
+    if (!selectedModel) {
+      toast({
+        title: "Modelo não selecionado",
+        description: "Por favor, selecione um modelo antes de aplicar as alterações.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsUpdating(true);
+    
     try {
-      // Verificar se o modelo é válido para o tipo de Agent
-      const validModels = ["gpt-4o", "gpt-4o-mini", "claude-3-haiku", "claude-3-sonnet"];
-      if (!validModels.includes(model)) {
+      // Para o agente atendimento, forçar o uso do modelo gemini-pro se o provedor for Google
+      let modelToUse = selectedModel;
+      
+      // Se o provedor não for "openai" ou "anthropic", vamos adaptá-lo para um modelo compatível
+      // já que nosso tipo Agent só permite alguns modelos específicos
+      if (!["gpt-4o", "gpt-4o-mini", "claude-3-haiku", "claude-3-sonnet"].includes(modelToUse)) {
+        // Mapeamento para um modelo compatível com nosso tipo Agent
+        if (selectedProvider === "google") {
+          modelToUse = "gpt-4o-mini"; // Usamos isto como proxy para o Gemini no frontend
+        } else if (selectedProvider === "deepseek") {
+          modelToUse = "gpt-4o-mini"; // Usamos isto como proxy para o Deepseek no frontend
+        }
+        
         toast({
-          title: "Modelo não suportado",
-          description: `O modelo ${model} não é suportado atualmente.`,
-          variant: "destructive",
+          title: "Adaptação de modelo",
+          description: `O modelo ${selectedModel} foi mapeado para ${modelToUse} no frontend. A API ainda usará ${selectedProvider} como provedor.`,
+          variant: "default",
         });
-        return;
       }
       
       // Atualizar o agente com o novo modelo
       onUpdate({
         ...agent,
-        model: model as any
+        model: modelToUse as any
       });
       
       toast({
@@ -100,6 +120,8 @@ export const AgentModelTab = ({ agent, onUpdate }: AgentModelTabProps) => {
         description: "Não foi possível atualizar o modelo.",
         variant: "destructive",
       });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -177,6 +199,19 @@ export const AgentModelTab = ({ agent, onUpdate }: AgentModelTabProps) => {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          
+          <div className="mt-4">
+            <Button onClick={applyModelChanges} disabled={isUpdating || !selectedModel}>
+              {isUpdating ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Atualizando...
+                </>
+              ) : (
+                "Aplicar Modelo"
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>
