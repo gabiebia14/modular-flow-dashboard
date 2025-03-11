@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Agent } from "@/types/agent";
 import { toast } from "@/components/ui/use-toast";
@@ -24,9 +25,16 @@ export function useAgents() {
       if (dbError) throw dbError;
 
       if (dbAgents && dbAgents.length > 0) {
-        // Mapeia os agentes do banco para incluir os ícones
-        const mappedAgents = dbAgents.map(agent => ({
-          ...agent,
+        // Mapeia os agentes do banco para incluir os ícones e garantir tipagem correta
+        const mappedAgents: Agent[] = dbAgents.map(agent => ({
+          id: agent.agent_id,
+          name: agent.name,
+          description: agent.description || "",
+          prompt: agent.prompt,
+          // Convertendo o model para um dos tipos válidos
+          model: validateAgentModel(agent.model),
+          active: agent.active === null ? true : agent.active,
+          type: validateAgentType(agent.type),
           icon: getAgentIcon(agent.type)
         }));
         setAgents(mappedAgents);
@@ -107,6 +115,30 @@ export function useAgents() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Função auxiliar para validar o modelo do agente
+  const validateAgentModel = (model: string): Agent["model"] => {
+    const validModels: Agent["model"][] = ["gpt-4o", "gpt-4o-mini", "claude-3-haiku", "claude-3-sonnet", "gemini-pro"];
+    
+    if (validModels.includes(model as Agent["model"])) {
+      return model as Agent["model"];
+    }
+    
+    // Retorna um modelo padrão se o modelo não for válido
+    return "gpt-4o-mini";
+  };
+
+  // Função auxiliar para validar o tipo do agente
+  const validateAgentType = (type: string): Agent["type"] => {
+    const validTypes: Agent["type"][] = ["atendimento", "orcamento", "validacao", "email"];
+    
+    if (validTypes.includes(type as Agent["type"])) {
+      return type as Agent["type"];
+    }
+    
+    // Retorna um tipo padrão se o tipo não for válido
+    return "atendimento";
   };
 
   const updateAgent = async (updatedAgent: Agent) => {
