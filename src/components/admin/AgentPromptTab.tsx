@@ -4,7 +4,8 @@ import { Agent } from "@/types/agent";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Copy } from "lucide-react";
+import { Copy, CheckCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface AgentPromptTabProps {
   agent: Agent;
@@ -13,6 +14,8 @@ interface AgentPromptTabProps {
 
 export const AgentPromptTab = ({ agent, onUpdate }: AgentPromptTabProps) => {
   const [prompt, setPrompt] = useState(agent.prompt);
+  const [isCopied, setIsCopied] = useState(false);
+  const { toast } = useToast();
 
   // Atualizar o prompt quando o agente selecionado muda
   useEffect(() => {
@@ -24,14 +27,43 @@ export const AgentPromptTab = ({ agent, onUpdate }: AgentPromptTabProps) => {
   };
 
   const handleSavePrompt = () => {
-    onUpdate({
-      ...agent,
-      prompt: prompt
-    });
+    if (prompt.trim() === "") {
+      toast({
+        title: "Campo obrigatório",
+        description: "O prompt não pode estar vazio.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      onUpdate({
+        ...agent,
+        prompt: prompt
+      });
+      
+      toast({
+        title: "Prompt atualizado",
+        description: "As alterações foram salvas localmente. Clique em 'Salvar Configurações' para persistir.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar prompt:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o prompt.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCopyPrompt = () => {
     navigator.clipboard.writeText(prompt);
+    setIsCopied(true);
+    
+    setTimeout(() => {
+      setIsCopied(false);
+    }, 2000);
   };
 
   return (
@@ -45,8 +77,12 @@ export const AgentPromptTab = ({ agent, onUpdate }: AgentPromptTabProps) => {
           variant="ghost"
           onClick={handleCopyPrompt}
         >
-          <Copy className="h-4 w-4 mr-1" />
-          Copiar
+          {isCopied ? (
+            <CheckCircle className="h-4 w-4 mr-1 text-green-500" />
+          ) : (
+            <Copy className="h-4 w-4 mr-1" />
+          )}
+          {isCopied ? "Copiado!" : "Copiar"}
         </Button>
       </div>
       
@@ -54,14 +90,19 @@ export const AgentPromptTab = ({ agent, onUpdate }: AgentPromptTabProps) => {
         id="agent-prompt"
         value={prompt}
         onChange={handlePromptChange}
-        onBlur={handleSavePrompt}
         className="min-h-[400px] font-mono text-sm"
         placeholder="Insira aqui o prompt para definir o comportamento do agente..."
       />
       
+      <div className="flex justify-end">
+        <Button onClick={handleSavePrompt}>
+          Aplicar Alterações
+        </Button>
+      </div>
+      
       <p className="text-xs text-muted-foreground">
         Use este prompt para definir o comportamento, tom e instruções específicas para o agente.
-        As alterações são salvas automaticamente ao clicar fora da área de texto.
+        Clique em "Aplicar Alterações" para salvar temporariamente. Para persistir, use o botão "Salvar Configurações" no topo.
       </p>
     </div>
   );

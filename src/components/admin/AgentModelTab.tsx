@@ -5,6 +5,9 @@ import { Label } from "@/components/ui/label";
 import { Agent } from "@/types/agent";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AgentModelTabProps {
   agent: Agent;
@@ -16,6 +19,7 @@ export const AgentModelTab = ({ agent, onUpdate }: AgentModelTabProps) => {
   const [selectedModel, setSelectedModel] = useState<string>(agent.model);
   const [temperature, setTemperature] = useState<number>(0.7);
   const [maxLength, setMaxLength] = useState<number>(2048);
+  const { toast } = useToast();
 
   // Mapear o modelo atual para o provedor correspondente
   useEffect(() => {
@@ -23,6 +27,8 @@ export const AgentModelTab = ({ agent, onUpdate }: AgentModelTabProps) => {
       setSelectedProvider("openai");
     } else if (agent.model.startsWith("gemini-")) {
       setSelectedProvider("google");
+    } else if (agent.model.startsWith("claude-")) {
+      setSelectedProvider("anthropic");
     } else if (agent.model.startsWith("deepseek-")) {
       setSelectedProvider("deepseek");
     }
@@ -30,8 +36,8 @@ export const AgentModelTab = ({ agent, onUpdate }: AgentModelTabProps) => {
     setSelectedModel(agent.model);
   }, [agent.model]);
 
-  const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const provider = e.target.value;
+  const handleProviderChange = (value: string) => {
+    const provider = value;
     setSelectedProvider(provider);
     
     // Definir o modelo padrão para o provedor selecionado
@@ -43,6 +49,9 @@ export const AgentModelTab = ({ agent, onUpdate }: AgentModelTabProps) => {
       case "google":
         defaultModel = "gemini-pro";
         break;
+      case "anthropic":
+        defaultModel = "claude-3-haiku";
+        break;
       case "deepseek":
         defaultModel = "deepseek-chat";
         break;
@@ -51,23 +60,47 @@ export const AgentModelTab = ({ agent, onUpdate }: AgentModelTabProps) => {
     }
     
     setSelectedModel(defaultModel);
-    
-    // Atualizar o agente com o novo modelo
-    onUpdate({
-      ...agent,
-      model: defaultModel as any
-    });
+    applyModelChanges(defaultModel);
   };
 
-  const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const model = e.target.value;
+  const handleModelChange = (value: string) => {
+    const model = value;
     setSelectedModel(model);
-    
-    // Atualizar o agente com o novo modelo
-    onUpdate({
-      ...agent,
-      model: model as any
-    });
+    applyModelChanges(model);
+  };
+  
+  const applyModelChanges = (model: string) => {
+    try {
+      // Verificar se o modelo é válido para o tipo de Agent
+      const validModels = ["gpt-4o", "gpt-4o-mini", "claude-3-haiku", "claude-3-sonnet"];
+      if (!validModels.includes(model)) {
+        toast({
+          title: "Modelo não suportado",
+          description: `O modelo ${model} não é suportado atualmente.`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Atualizar o agente com o novo modelo
+      onUpdate({
+        ...agent,
+        model: model as any
+      });
+      
+      toast({
+        title: "Modelo atualizado",
+        description: "As alterações foram salvas localmente. Clique em 'Salvar Configurações' para persistir.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar modelo:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o modelo.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleTemperatureChange = (value: number[]) => {
@@ -93,42 +126,56 @@ export const AgentModelTab = ({ agent, onUpdate }: AgentModelTabProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Provedor</Label>
-              <select 
-                className="w-full border border-input bg-background rounded-md p-2"
+              <Select 
                 value={selectedProvider}
-                onChange={handleProviderChange}
+                onValueChange={handleProviderChange}
               >
-                <option value="">Selecione um provedor</option>
-                <option value="openai">OpenAI</option>
-                <option value="google">Google (Gemini)</option>
-                <option value="deepseek">Deepseek</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um provedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="openai">OpenAI</SelectItem>
+                  <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
+                  <SelectItem value="google">Google (Gemini)</SelectItem>
+                  <SelectItem value="deepseek">Deepseek</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label className="text-sm font-medium">Modelo</Label>
-              <select 
-                className="w-full border border-input bg-background rounded-md p-2"
+              <Select 
                 value={selectedModel}
-                onChange={handleModelChange}
+                onValueChange={handleModelChange}
                 disabled={!selectedProvider}
               >
-                {selectedProvider === "openai" && (
-                  <>
-                    <option value="gpt-4o">GPT-4o</option>
-                    <option value="gpt-4o-mini">GPT-4o Mini</option>
-                  </>
-                )}
-                {selectedProvider === "google" && (
-                  <>
-                    <option value="gemini-pro">Gemini Pro</option>
-                  </>
-                )}
-                {selectedProvider === "deepseek" && (
-                  <>
-                    <option value="deepseek-chat">Deepseek Chat</option>
-                  </>
-                )}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um modelo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectedProvider === "openai" && (
+                    <>
+                      <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+                      <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
+                    </>
+                  )}
+                  {selectedProvider === "anthropic" && (
+                    <>
+                      <SelectItem value="claude-3-haiku">Claude 3 Haiku</SelectItem>
+                      <SelectItem value="claude-3-sonnet">Claude 3 Sonnet</SelectItem>
+                    </>
+                  )}
+                  {selectedProvider === "google" && (
+                    <>
+                      <SelectItem value="gemini-pro">Gemini Pro</SelectItem>
+                    </>
+                  )}
+                  {selectedProvider === "deepseek" && (
+                    <>
+                      <SelectItem value="deepseek-chat">Deepseek Chat</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>

@@ -58,6 +58,11 @@ serve(async (req) => {
         if (!agentData) {
           throw new Error("Dados do agente não fornecidos");
         }
+        
+        // Validar dados do agente
+        if (!agentData.agent_id || !agentData.name || !agentData.prompt || !agentData.model || !agentData.type) {
+          throw new Error("Campos obrigatórios não fornecidos: agent_id, name, prompt, model, type");
+        }
 
         const { data: newAgent, error: createError } = await supabase
           .from("agents")
@@ -78,8 +83,53 @@ serve(async (req) => {
         if (!agentData || !agentData.agent_id) {
           throw new Error("ID do agente não fornecido");
         }
+        
+        // Validar dados do agente
+        if (!agentData.name || !agentData.prompt || !agentData.model || !agentData.type) {
+          throw new Error("Campos obrigatórios não fornecidos: name, prompt, model, type");
+        }
 
         console.log("Atualizando agente com ID:", agentData.agent_id);
+        
+        // Primeiro verifica se o agente existe
+        const { data: existingAgent, error: checkError } = await supabase
+          .from("agents")
+          .select("*")
+          .eq("agent_id", agentData.agent_id)
+          .single();
+          
+        if (checkError) {
+          if (checkError.code === "PGRST116") {
+            // Não encontrado, então vamos inserir
+            console.log("Agente não encontrado, criando novo...");
+            
+            // Adicionar timestamps
+            agentData.created_at = new Date().toISOString();
+            agentData.updated_at = new Date().toISOString();
+            
+            const { data: insertedAgent, error: insertError } = await supabase
+              .from("agents")
+              .insert([agentData])
+              .select()
+              .single();
+              
+            if (insertError) {
+              console.error("Erro ao inserir agente:", insertError);
+              throw new Error(insertError.message);
+            }
+            
+            return new Response(JSON.stringify({ success: true, data: insertedAgent }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          } else {
+            // Outro erro ao verificar
+            console.error("Erro ao verificar existência do agente:", checkError);
+            throw new Error(checkError.message);
+          }
+        }
+        
+        // Atualizar os campos
+        agentData.updated_at = new Date().toISOString();
         
         const { data: updatedAgent, error: updateError } = await supabase
           .from("agents")

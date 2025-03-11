@@ -126,6 +126,14 @@ export const useAgents = () => {
 
   const saveAgent = async (agent: Agent) => {
     try {
+      if (!agent) {
+        throw new Error("Agente inválido");
+      }
+      
+      if (!agent.prompt || agent.prompt.trim() === "") {
+        throw new Error("O prompt do agente não pode estar vazio");
+      }
+      
       console.log("Salvando agente:", agent);
       
       // Preparar os dados para o formato do banco
