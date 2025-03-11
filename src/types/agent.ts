@@ -30,6 +30,8 @@ export interface ApiKey {
   provider: string;
   api_key: string;
   endpoint?: string;
+  model_type?: string;
+  model_version?: string;
   active: boolean;
   created_at: string;
   updated_at: string;
