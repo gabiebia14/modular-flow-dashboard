@@ -1,4 +1,6 @@
 
+import { Agent } from "./agent";
+
 export interface Message {
   id: string;
   content: string;
@@ -9,4 +11,5 @@ export interface Message {
 export interface ChatInterfaceProps {
   welcomeMessage?: string;
   placeholder?: string;
+  agentType?: Agent["type"];
 }
