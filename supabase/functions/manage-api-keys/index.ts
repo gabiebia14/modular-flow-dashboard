@@ -32,14 +32,19 @@ serve(async (req) => {
     // Determinar qual operação executar com base no método recebido
     switch (method) {
       case "GET_ALL":
-        // Retorna apenas metadados das chaves de API, não as chaves em si
+        // Retorna todos os detalhes das chaves de API incluindo a chave em si para exibição no frontend
         const { data: apiKeys, error: fetchError } = await supabase
           .from("api_keys")
-          .select("id, provider, endpoint, model_type, model_version, active, created_at, updated_at");
+          .select("*");
 
-        if (fetchError) throw new Error(fetchError.message);
+        if (fetchError) {
+          console.error("Erro ao buscar chaves:", fetchError);
+          throw new Error(fetchError.message);
+        }
         
-        return new Response(JSON.stringify({ success: true, data: apiKeys }), {
+        console.log(`Encontradas ${apiKeys?.length || 0} chaves de API`);
+        
+        return new Response(JSON.stringify({ success: true, data: apiKeys || [] }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
 
@@ -75,11 +80,11 @@ serve(async (req) => {
               endpoint: apiKeyData.endpoint,
               model_type: apiKeyData.model_type,
               model_version: apiKeyData.model_version,
-              active: apiKeyData.active,
+              active: apiKeyData.active !== undefined ? apiKeyData.active : true,
               updated_at: new Date().toISOString()
             })
             .eq("id", existingKey.id)
-            .select("id, provider, endpoint, model_type, model_version, active, created_at, updated_at")
+            .select("*")
             .single();
 
           if (updateError) {
@@ -87,6 +92,7 @@ serve(async (req) => {
             throw new Error(updateError.message);
           }
           result = data;
+          console.log("Chave atualizada com sucesso:", result ? result.provider : null);
         } else {
           console.log("Criando nova chave para o provedor:", apiKeyData.provider);
           // Cria uma nova chave
@@ -98,9 +104,9 @@ serve(async (req) => {
               endpoint: apiKeyData.endpoint || null,
               model_type: apiKeyData.model_type || null,
               model_version: apiKeyData.model_version || null,
-              active: apiKeyData.active || true
+              active: apiKeyData.active !== undefined ? apiKeyData.active : true
             }])
-            .select("id, provider, endpoint, model_type, model_version, active, created_at, updated_at")
+            .select("*")
             .single();
 
           if (insertError) {
@@ -108,41 +114,69 @@ serve(async (req) => {
             throw new Error(insertError.message);
           }
           result = data;
+          console.log("Nova chave criada com sucesso:", result ? result.provider : null);
         }
         
-        console.log("Chave salva com sucesso:", result ? result.provider : null);
+        if (!result) {
+          throw new Error("Operação de salvamento não retornou dados");
+        }
         
         return new Response(JSON.stringify({ success: true, data: result }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
 
       case "DELETE":
+        if (!apiKeyData || !apiKeyData.id) {
+          throw new Error("ID da chave não fornecido para exclusão");
+        }
+        
+        console.log("Excluindo chave com ID:", apiKeyData.id);
+        
         const { error: deleteError } = await supabase
           .from("api_keys")
           .delete()
           .eq("id", apiKeyData.id);
 
-        if (deleteError) throw new Error(deleteError.message);
+        if (deleteError) {
+          console.error("Erro ao excluir chave:", deleteError);
+          throw new Error(deleteError.message);
+        }
+        
+        console.log("Chave excluída com sucesso");
         
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
 
       case "TEST_CONNECTION":
+        // Validação
+        if (!apiKeyData || !apiKeyData.provider) {
+          throw new Error("Provedor não especificado para teste de conexão");
+        }
+        
         // Busca a chave de API para teste
         const { data: keyData, error: keyError } = await supabase
           .from("api_keys")
           .select("api_key, endpoint, provider")
           .eq("provider", apiKeyData.provider)
-          .single();
+          .maybeSingle();
 
-        if (keyError) throw new Error("Chave de API não encontrada");
+        if (keyError) {
+          console.error("Erro ao buscar chave para teste:", keyError);
+          throw new Error("Erro ao buscar chave de API: " + keyError.message);
+        }
+        
+        if (!keyData) {
+          throw new Error(`Nenhuma chave encontrada para o provedor ${apiKeyData.provider}`);
+        }
 
         // Implementa um teste específico para cada provedor
         let testResult = false;
         let testResponse;
         
         try {
+          console.log(`Testando conexão para ${keyData.provider} usando endpoint: ${keyData.endpoint || "padrão"}`);
+          
           if (keyData.provider === "openai") {
             const endpoint = keyData.endpoint || "https://api.openai.com/v1/models";
             testResponse = await fetch(endpoint, {
@@ -170,19 +204,23 @@ serve(async (req) => {
             testResult = testResponse.status < 300;
           }
           
-          console.log(`Teste de conexão para ${keyData.provider}: ${testResult ? 'Sucesso' : 'Falha'}`);
+          console.log(`Resultado do teste para ${keyData.provider}: ${testResult ? 'Sucesso' : 'Falha'} (status: ${testResponse?.status || 'N/A'})`);
           
         } catch (fetchError) {
           console.error(`Erro ao testar conexão para ${keyData.provider}:`, fetchError);
           testResult = false;
         }
         
-        return new Response(JSON.stringify({ success: testResult }), {
+        return new Response(JSON.stringify({ 
+          success: testResult,
+          status: testResponse?.status,
+          message: testResult ? "Conexão bem-sucedida" : "Falha na conexão"
+        }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
 
       default:
-        throw new Error("Método não suportado");
+        throw new Error(`Método não suportado: ${method}`);
     }
   } catch (error) {
     console.error("Erro ao gerenciar chaves de API:", error);
