@@ -19,7 +19,15 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   try {
-    const { method, apiKeyData } = await req.json();
+    // Verifica se o corpo da requisição existe
+    if (!req.body) {
+      throw new Error("Corpo da requisição está vazio");
+    }
+
+    const body = await req.json();
+    const { method, apiKeyData } = body;
+
+    console.log(`Recebendo solicitação método: ${method}, dados:`, apiKeyData);
 
     // Determinar qual operação executar com base no método recebido
     switch (method) {
@@ -36,16 +44,29 @@ serve(async (req) => {
         });
 
       case "SAVE":
+        // Validação dos dados recebidos
+        if (!apiKeyData || !apiKeyData.provider || !apiKeyData.api_key) {
+          throw new Error("Dados incompletos para salvar a chave de API");
+        }
+
+        console.log("Tentando salvar chave para o provedor:", apiKeyData.provider);
+
         // Verifica se já existe uma chave para este provedor
-        const { data: existingKey } = await supabase
+        const { data: existingKey, error: findError } = await supabase
           .from("api_keys")
           .select("id")
           .eq("provider", apiKeyData.provider)
           .maybeSingle();
 
+        if (findError) {
+          console.error("Erro ao verificar chave existente:", findError);
+          throw new Error(`Erro ao verificar chave existente: ${findError.message}`);
+        }
+
         let result;
         
         if (existingKey) {
+          console.log("Atualizando chave existente para o provedor:", apiKeyData.provider);
           // Atualiza a chave existente
           const { data, error: updateError } = await supabase
             .from("api_keys")
@@ -61,19 +82,35 @@ serve(async (req) => {
             .select("id, provider, endpoint, model_type, model_version, active, created_at, updated_at")
             .single();
 
-          if (updateError) throw new Error(updateError.message);
+          if (updateError) {
+            console.error("Erro ao atualizar chave:", updateError);
+            throw new Error(updateError.message);
+          }
           result = data;
         } else {
+          console.log("Criando nova chave para o provedor:", apiKeyData.provider);
           // Cria uma nova chave
           const { data, error: insertError } = await supabase
             .from("api_keys")
-            .insert([apiKeyData])
+            .insert([{
+              provider: apiKeyData.provider,
+              api_key: apiKeyData.api_key,
+              endpoint: apiKeyData.endpoint || null,
+              model_type: apiKeyData.model_type || null,
+              model_version: apiKeyData.model_version || null,
+              active: apiKeyData.active || true
+            }])
             .select("id, provider, endpoint, model_type, model_version, active, created_at, updated_at")
             .single();
 
-          if (insertError) throw new Error(insertError.message);
+          if (insertError) {
+            console.error("Erro ao inserir chave:", insertError);
+            throw new Error(insertError.message);
+          }
           result = data;
         }
+        
+        console.log("Chave salva com sucesso:", result ? result.provider : null);
         
         return new Response(JSON.stringify({ success: true, data: result }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -103,32 +140,41 @@ serve(async (req) => {
 
         // Implementa um teste específico para cada provedor
         let testResult = false;
+        let testResponse;
         
-        if (keyData.provider === "openai") {
-          const endpoint = keyData.endpoint || "https://api.openai.com/v1/models";
-          const response = await fetch(endpoint, {
-            headers: {
-              "Authorization": `Bearer ${keyData.api_key}`,
-              "Content-Type": "application/json"
-            }
-          });
-          testResult = response.status < 300;
-        } else if (keyData.provider === "google") {
-          // Para o Google, testamos listando modelos
-          const baseUrl = "https://generativelanguage.googleapis.com/v1beta/models";
-          const apiKeyParam = `?key=${keyData.api_key}`;
-          const response = await fetch(`${baseUrl}${apiKeyParam}`);
-          testResult = response.status < 300;
-        } else if (keyData.provider === "deepseek") {
-          // Para o Deepseek, testamos com uma requisição simples
-          const endpoint = keyData.endpoint || "https://api.deepseek.com/v1/models";
-          const response = await fetch(endpoint, {
-            headers: {
-              "Authorization": `Bearer ${keyData.api_key}`,
-              "Content-Type": "application/json"
-            }
-          });
-          testResult = response.status < 300;
+        try {
+          if (keyData.provider === "openai") {
+            const endpoint = keyData.endpoint || "https://api.openai.com/v1/models";
+            testResponse = await fetch(endpoint, {
+              headers: {
+                "Authorization": `Bearer ${keyData.api_key}`,
+                "Content-Type": "application/json"
+              }
+            });
+            testResult = testResponse.status < 300;
+          } else if (keyData.provider === "google") {
+            // Para o Google, testamos listando modelos
+            const baseUrl = "https://generativelanguage.googleapis.com/v1beta/models";
+            const apiKeyParam = `?key=${keyData.api_key}`;
+            testResponse = await fetch(`${baseUrl}${apiKeyParam}`);
+            testResult = testResponse.status < 300;
+          } else if (keyData.provider === "deepseek") {
+            // Para o Deepseek, testamos com uma requisição simples
+            const endpoint = keyData.endpoint || "https://api.deepseek.com/v1/models";
+            testResponse = await fetch(endpoint, {
+              headers: {
+                "Authorization": `Bearer ${keyData.api_key}`,
+                "Content-Type": "application/json"
+              }
+            });
+            testResult = testResponse.status < 300;
+          }
+          
+          console.log(`Teste de conexão para ${keyData.provider}: ${testResult ? 'Sucesso' : 'Falha'}`);
+          
+        } catch (fetchError) {
+          console.error(`Erro ao testar conexão para ${keyData.provider}:`, fetchError);
+          testResult = false;
         }
         
         return new Response(JSON.stringify({ success: testResult }), {
@@ -143,7 +189,7 @@ serve(async (req) => {
     
     return new Response(JSON.stringify({ 
       success: false, 
-      error: error.message 
+      error: error.message || "Erro desconhecido"
     }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

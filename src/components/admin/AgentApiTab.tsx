@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui-custom
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, KeyRound, Loader2, Server, Info } from "lucide-react";
+import { AlertCircle, KeyRound, Loader2, Server, Info, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -16,28 +16,48 @@ export const AgentApiTab = () => {
   const [isSavingApiKey, setIsSavingApiKey] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [existingProviders, setExistingProviders] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     // Carregar provedores existentes
     const loadExistingProviders = async () => {
+      setIsLoading(true);
       try {
+        console.log("Buscando chaves de API existentes...");
         const response = await supabase.functions.invoke('manage-api-keys', {
           body: { 
             method: 'GET_ALL'
           }
         });
         
+        console.log("Resposta da busca de chaves:", response);
+        
         if (response.data && response.data.success && Array.isArray(response.data.data)) {
           const providers = response.data.data.map((key: any) => key.provider);
           setExistingProviders(providers);
+          console.log("Provedores encontrados:", providers);
+        } else {
+          console.error("Formato de resposta inesperado:", response);
+          toast({
+            title: "Erro ao carregar configurações",
+            description: "Não foi possível carregar as chaves de API existentes.",
+            variant: "destructive",
+          });
         }
       } catch (error) {
         console.error("Erro ao carregar provedores:", error);
+        toast({
+          title: "Erro ao carregar configurações",
+          description: "Ocorreu um erro ao buscar as chaves de API.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
     
     loadExistingProviders();
-  }, []);
+  }, [toast]);
   
   // Ajustar endpoint padrão com base no provedor selecionado
   useEffect(() => {
@@ -100,6 +120,12 @@ export const AgentApiTab = () => {
         active: true
       };
       
+      console.log("Enviando solicitação para salvar chave:", {
+        provider: apiKeyData.provider,
+        endpoint: apiKeyData.endpoint,
+        model_type: apiKeyData.model_type
+      });
+      
       const response = await supabase.functions.invoke('manage-api-keys', {
         body: { 
           method: 'SAVE',
@@ -107,7 +133,9 @@ export const AgentApiTab = () => {
         }
       });
       
-      if (response.data.success) {
+      console.log("Resposta da função de salvar chave:", response);
+      
+      if (response.data && response.data.success) {
         toast({
           title: "Chave de API salva",
           description: `A chave de API para ${selectedProvider} foi salva com sucesso.`,
@@ -122,17 +150,66 @@ export const AgentApiTab = () => {
         // Limpar campos
         setApiKey("");
       } else {
-        throw new Error(response.data.error || "Erro desconhecido");
+        const errorMessage = response.error || (response.data && response.data.error) || "Erro desconhecido";
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error("Erro ao salvar chave de API:", error);
       toast({
         title: "Erro ao salvar",
-        description: `Não foi possível salvar a chave de API: ${error.message}`,
+        description: `Não foi possível salvar a chave de API: ${error.message || "Erro desconhecido"}`,
         variant: "destructive",
       });
     } finally {
       setIsSavingApiKey(false);
+    }
+  };
+  
+  const handleRemoveProvider = async (provider: string) => {
+    if (!provider) return;
+    
+    try {
+      // Primeiro precisamos obter o ID da chave que queremos remover
+      const response = await supabase.functions.invoke('manage-api-keys', {
+        body: { 
+          method: 'GET_ALL'
+        }
+      });
+      
+      if (response.data && response.data.success && Array.isArray(response.data.data)) {
+        const keyToDelete = response.data.data.find((key: any) => key.provider === provider);
+        
+        if (keyToDelete) {
+          const deleteResponse = await supabase.functions.invoke('manage-api-keys', {
+            body: { 
+              method: 'DELETE',
+              apiKeyData: { id: keyToDelete.id }
+            }
+          });
+          
+          if (deleteResponse.data && deleteResponse.data.success) {
+            toast({
+              title: "Chave removida",
+              description: `A chave de API para ${provider} foi removida com sucesso.`,
+              variant: "default",
+            });
+            
+            // Atualizar lista de provedores existentes
+            setExistingProviders(existingProviders.filter(p => p !== provider));
+          } else {
+            throw new Error(deleteResponse.error || "Erro ao excluir a chave");
+          }
+        }
+      } else {
+        throw new Error("Não foi possível obter as chaves existentes");
+      }
+    } catch (error) {
+      console.error("Erro ao remover provedor:", error);
+      toast({
+        title: "Erro ao remover",
+        description: `Não foi possível remover a chave de API: ${error.message}`,
+        variant: "destructive",
+      });
     }
   };
   
@@ -142,6 +219,7 @@ export const AgentApiTab = () => {
     setIsTestingConnection(true);
     
     try {
+      console.log("Testando conexão para provedor:", selectedProvider);
       const response = await supabase.functions.invoke('manage-api-keys', {
         body: { 
           method: 'TEST_CONNECTION',
@@ -149,14 +227,17 @@ export const AgentApiTab = () => {
         }
       });
       
-      if (response.data.success) {
+      console.log("Resposta do teste de conexão:", response);
+      
+      if (response.data && response.data.success) {
         toast({
           title: "Conexão bem-sucedida",
           description: `A conexão com a API de ${selectedProvider} foi testada com sucesso.`,
           variant: "default",
         });
       } else {
-        throw new Error("Falha no teste de conexão");
+        const errorMessage = response.error || (response.data && response.data.error) || "Falha no teste de conexão";
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error("Erro ao testar conexão:", error);
@@ -271,20 +352,40 @@ export const AgentApiTab = () => {
           <CardTitle className="text-base">Provedores Configurados</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {existingProviders.length > 0 ? (
-              existingProviders.map((provider) => (
-                <div key={provider} className="p-4 border rounded-md flex items-center space-x-2">
-                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                  <span className="font-medium">{provider.charAt(0).toUpperCase() + provider.slice(1)}</span>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-muted-foreground">Carregando...</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {existingProviders.length > 0 ? (
+                existingProviders.map((provider) => (
+                  <div 
+                    key={provider} 
+                    className="p-4 border rounded-md flex items-center justify-between"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                      <span className="font-medium">{provider.charAt(0).toUpperCase() + provider.slice(1)}</span>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleRemoveProvider(provider)}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-3 text-center py-4 text-muted-foreground">
+                  Nenhum provedor configurado ainda
                 </div>
-              ))
-            ) : (
-              <div className="col-span-3 text-center py-4 text-muted-foreground">
-                Nenhum provedor configurado ainda
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
