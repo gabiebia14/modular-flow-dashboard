@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Check, Copy, Edit, Save, Plus, Trash, Info } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "./Card";
@@ -14,10 +15,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import type { Agent } from "@/types/agent";
+
 interface AgentConfigProps {
   agentName?: string;
   defaultPrompt?: string;
 }
+
 export const AgentConfig = ({
   agentName,
   defaultPrompt
@@ -55,37 +58,43 @@ export const AgentConfig = ({
     active: false,
     type: "email"
   }]);
+  
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(agents[0]);
+  
   const handleEditAgent = (agent: Agent) => {
-    setEditingAgent({
-      ...agent
-    });
+    setEditingAgent({...agent});
   };
+  
   const handleSaveAgent = () => {
     if (!editingAgent) return;
-    setAgents(agents.map(agent => agent.id === editingAgent.id ? editingAgent : agent));
+    
+    setAgents(agents.map(agent => 
+      agent.id === editingAgent.id ? editingAgent : agent
+    ));
+    
     if (selectedAgent?.id === editingAgent.id) {
       setSelectedAgent(editingAgent);
     }
+    
     setEditingAgent(null);
   };
+  
   const handleCopyPrompt = (prompt: string) => {
     navigator.clipboard.writeText(prompt);
     // In a real application, add toast notification here
   };
+  
   const handleActivateAgent = (agentId: string, active: boolean) => {
-    setAgents(agents.map(agent => agent.id === agentId ? {
-      ...agent,
-      active
-    } : agent));
+    setAgents(agents.map(agent => 
+      agent.id === agentId ? {...agent, active} : agent
+    ));
+    
     if (selectedAgent?.id === agentId) {
-      setSelectedAgent(prev => prev ? {
-        ...prev,
-        active
-      } : null);
+      setSelectedAgent(prev => prev ? {...prev, active} : null);
     }
   };
+  
   const getTypeLabel = (type: string) => {
     switch (type) {
       case "atendimento":
@@ -100,7 +109,9 @@ export const AgentConfig = ({
         return type;
     }
   };
-  return <div className="flex flex-col gap-6">
+  
+  return (
+    <div className="flex flex-col gap-6">
       <Card glassmorphism>
         <CardHeader>
           <CardTitle>Configuração de Agentes</CardTitle>
@@ -121,7 +132,16 @@ export const AgentConfig = ({
               
               <ScrollArea className="h-[500px] border rounded-lg">
                 <div className="p-1">
-                  {agents.map(agent => <button key={agent.id} className={cn("w-full text-left px-3 py-3 rounded-md transition-all-subtle", "border border-transparent hover:border-border mb-1 last:mb-0", selectedAgent?.id === agent.id ? "bg-muted border-border" : "hover:bg-muted/50")} onClick={() => setSelectedAgent(agent)}>
+                  {agents.map(agent => (
+                    <button
+                      key={agent.id}
+                      className={cn(
+                        "w-full text-left px-3 py-3 rounded-md transition-all-subtle",
+                        "border border-transparent hover:border-border mb-1 last:mb-0",
+                        selectedAgent?.id === agent.id ? "bg-muted border-border" : "hover:bg-muted/50"
+                      )}
+                      onClick={() => setSelectedAgent(agent)}
+                    >
                       <div className="flex items-center justify-between">
                         <h3 className="font-medium text-sm">{agent.name}</h3>
                         <Badge variant={agent.active ? "default" : "outline"} className={cn("text-xs", !agent.active && "text-muted-foreground")}>
@@ -139,21 +159,30 @@ export const AgentConfig = ({
                           {getTypeLabel(agent.type)}
                         </Badge>
                       </div>
-                    </button>)}
+                    </button>
+                  ))}
                 </div>
               </ScrollArea>
             </div>
 
             <div className="lg:col-span-3">
-              {selectedAgent && <div className="space-y-4">
+              {selectedAgent && (
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-medium">Detalhes do Agente</h3>
                     <div className="flex items-center gap-2">
-                      <Switch checked={selectedAgent.active} onCheckedChange={checked => handleActivateAgent(selectedAgent.id, checked)} />
-                      <Label htmlFor="active" className="text-sm">
+                      <Switch 
+                        checked={selectedAgent.active} 
+                        onCheckedChange={checked => handleActivateAgent(selectedAgent.id, checked)} 
+                      />
+                      <Label className="text-sm">
                         {selectedAgent.active ? "Ativo" : "Inativo"}
                       </Label>
-                      <Button size="sm" variant="outline" onClick={() => handleEditAgent(selectedAgent)} className="esse botao deve funcionar pra mim poder editar o agente\n">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleEditAgent(selectedAgent)}
+                      >
                         <Edit className="h-4 w-4 mr-1" />
                         Editar
                       </Button>
@@ -219,14 +248,16 @@ export const AgentConfig = ({
                       {selectedAgent.prompt}
                     </div>
                   </div>
-                </div>}
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
       
       {/* Edit Agent Dialog */}
-      {editingAgent && <Card glassmorphism className="absolute inset-4 z-50 overflow-auto">
+      {editingAgent && (
+        <Card glassmorphism className="fixed inset-4 z-50 overflow-auto">
           <CardHeader className="sticky top-0 bg-card border-b z-10">
             <div className="flex items-center justify-between">
               <CardTitle>Editar Agente</CardTitle>
@@ -245,17 +276,21 @@ export const AgentConfig = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome do Agente</Label>
-                <Input id="name" value={editingAgent.name} onChange={e => setEditingAgent({
-              ...editingAgent,
-              name: e.target.value
-            })} />
+                <Input 
+                  id="name" 
+                  value={editingAgent.name} 
+                  onChange={e => setEditingAgent({...editingAgent, name: e.target.value})} 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="type">Tipo</Label>
-                <Select value={editingAgent.type} onValueChange={value => setEditingAgent({
-              ...editingAgent,
-              type: value as "atendimento" | "orcamento" | "validacao" | "email"
-            })}>
+                <Select 
+                  value={editingAgent.type} 
+                  onValueChange={value => setEditingAgent({
+                    ...editingAgent, 
+                    type: value as "atendimento" | "orcamento" | "validacao" | "email"
+                  })}
+                >
                   <SelectTrigger id="type">
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
@@ -269,17 +304,21 @@ export const AgentConfig = ({
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="description">Descrição</Label>
-                <Input id="description" value={editingAgent.description} onChange={e => setEditingAgent({
-              ...editingAgent,
-              description: e.target.value
-            })} />
+                <Input 
+                  id="description" 
+                  value={editingAgent.description} 
+                  onChange={e => setEditingAgent({...editingAgent, description: e.target.value})} 
+                />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="model">Modelo</Label>
-                <Select value={editingAgent.model} onValueChange={value => setEditingAgent({
-              ...editingAgent,
-              model: value as "gpt-4o" | "gpt-4o-mini" | "claude-3-haiku" | "claude-3-sonnet"
-            })}>
+                <Select 
+                  value={editingAgent.model} 
+                  onValueChange={value => setEditingAgent({
+                    ...editingAgent, 
+                    model: value as "gpt-4o" | "gpt-4o-mini" | "claude-3-haiku" | "claude-3-sonnet" | "gemini-pro"
+                  })}
+                >
                   <SelectTrigger id="model">
                     <SelectValue placeholder="Selecione o modelo" />
                   </SelectTrigger>
@@ -288,6 +327,7 @@ export const AgentConfig = ({
                     <SelectItem value="gpt-4o-mini">GPT-4o-mini (Rápido)</SelectItem>
                     <SelectItem value="claude-3-haiku">Claude-3-Haiku</SelectItem>
                     <SelectItem value="claude-3-sonnet">Claude-3-Sonnet</SelectItem>
+                    <SelectItem value="gemini-pro">Gemini Pro</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -295,10 +335,11 @@ export const AgentConfig = ({
                 <div className="flex items-center justify-between">
                   <Label htmlFor="active">Status</Label>
                   <div className="flex items-center gap-2">
-                    <Switch id="active" checked={editingAgent.active} onCheckedChange={checked => setEditingAgent({
-                  ...editingAgent,
-                  active: checked
-                })} />
+                    <Switch 
+                      id="active" 
+                      checked={editingAgent.active} 
+                      onCheckedChange={checked => setEditingAgent({...editingAgent, active: checked})} 
+                    />
                     <Label htmlFor="active" className="cursor-pointer">
                       {editingAgent.active ? "Ativo" : "Inativo"}
                     </Label>
@@ -309,15 +350,19 @@ export const AgentConfig = ({
             
             <div className="space-y-2">
               <Label htmlFor="prompt">Prompt do Agente</Label>
-              <Textarea id="prompt" value={editingAgent.prompt} onChange={e => setEditingAgent({
-            ...editingAgent,
-            prompt: e.target.value
-          })} className="min-h-[300px] font-mono text-sm" />
+              <Textarea 
+                id="prompt" 
+                value={editingAgent.prompt} 
+                onChange={e => setEditingAgent({...editingAgent, prompt: e.target.value})} 
+                className="min-h-[300px] font-mono text-sm" 
+              />
               <p className="text-xs text-muted-foreground">
                 Use este prompt para definir o comportamento, tom e instruções específicas para o agente.
               </p>
             </div>
           </CardContent>
-        </Card>}
-    </div>;
+        </Card>
+      )}
+    </div>
+  );
 };
