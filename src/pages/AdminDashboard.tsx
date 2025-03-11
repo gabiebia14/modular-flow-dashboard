@@ -8,10 +8,12 @@ import { AgentCard } from "@/components/admin/AgentCard";
 import { AgentTabs } from "@/components/admin/AgentTabs";
 import { useAgents } from "@/hooks/useAgents";
 import { Agent } from "@/types/agent";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
+  const isMobile = useIsMobile();
   
   const { 
     agents, 
@@ -67,7 +69,7 @@ const AdminDashboard = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
               {agents.map(agent => (
                 <AgentCard
                   key={agent.id}
@@ -83,12 +85,14 @@ const AdminDashboard = () => {
             </div>
             
             {activeAgent && (
-              <AgentTabs
-                agent={activeAgent}
-                isSaving={isSaving}
-                onSave={handleSaveConfig}
-                onUpdateAgent={handleUpdateAgent}
-              />
+              <div className="mt-8">
+                <AgentTabs
+                  agent={activeAgent}
+                  isSaving={isSaving}
+                  onSave={handleSaveConfig}
+                  onUpdateAgent={handleUpdateAgent}
+                />
+              </div>
             )}
           </>
         )}
